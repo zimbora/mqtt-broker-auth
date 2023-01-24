@@ -80,7 +80,6 @@ var self = module.exports = {
     try{ res = await getPermission(clientID,uid)}
     catch(err){ console.log(err);}
 
-    console.log(res);
     if(res != null && res.length > 0){
       if(res[0].level >= 3)
         return true;
@@ -136,7 +135,6 @@ async function getUser(user,pwd){
 
       query = mysql.format(query,table);
       conn.query(query,function(err,rows){
-        console.log(rows)
         db.close_db_connection(conn);
         if(err) return reject(err)
         else return resolve(rows);

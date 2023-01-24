@@ -173,9 +173,7 @@ async function updateDevice(uid,field,value){
 
     try{
       value = JSON.parse(value);
-    }catch{
-      console.log("Not json");
-    }
+    }catch{}
 
     db.getConnection((err,conn)=>{
       if(err) return reject(err);
@@ -199,9 +197,7 @@ async function updateDeviceJSON(uid,field,key,value){
 
     try{
       value = JSON.parse(value);
-    }catch{
-      console.log("Not json");
-    }
+    }catch{}
 
     db.getConnection((err,conn)=>{
       if(err) return reject(err);

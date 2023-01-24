@@ -57,7 +57,7 @@ function get_non_persistent_db_connection(db_name,cb){
 
 function close_db_connection(connection){
   if(connection != null){
-    connection.destroy();
+    connection.release();
   }
 }
 
