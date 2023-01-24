@@ -202,7 +202,6 @@ async function updateDeviceJSON(uid,field,key,value){
     }catch{
       console.log("Not json");
     }
-    console.log(value);
 
     db.getConnection((err,conn)=>{
       if(err) return reject(err);
