@@ -3,7 +3,7 @@ module.exports = {
   web:{ // service to do firmware download
     protocol : "http://",
     domain: '192.168.1.108', // port 80 must be used, bcs of fw download
-    fw_path : '/api/firmware/download/'
+    fw_path : '/api/firmware/'
   },
   port:{
     mqtt : 1883,

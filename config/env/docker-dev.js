@@ -3,7 +3,7 @@ module.exports = {
   web:{
     protocol : "http://",
     domain: '192.168.1.108',
-    fw_path : '/api/firmware/download/'
+    fw_path : '/api/firmware/'
   },
   port:{
     mqtt : 1883,

@@ -108,26 +108,32 @@ aedes.on('publish', async function (packet, client) {
           device.updateDevice(uid,"project",project,()=>{});
         }else if(topic.endsWith("/model")){
           field = "model";
-        }else if(topic.endsWith("/wifi/set") || topic.endsWith("/wifi")){
-          field = "fw_settings"
-          key = "wifi"
-        }else if(topic.endsWith("/mqtt/set") || topic.endsWith("/mqtt")){
-          field = "fw_settings"
-          key = "mqtt"
-        }else if(topic.endsWith("/keepalive/set") || topic.endsWith("/keepalive")){
-          field = "fw_settings"
-          key = "keepalive"
-        }else if(topic.endsWith("/log/set") || topic.endsWith("/log")){
-          field = "fw_settings"
-          key = "log"
         }else if(topic.endsWith("/ar/set")){
           field = "autorequests"
         }else if(topic.endsWith("/alarm/set")){
           field = "alarms"
         }else if(topic.endsWith("/js/code/set")){
           field = "js_program"
+        }else if(topic.includes("fw/settings")){
+          if(payload != null && payload != "" && typeof payload != "undefined"){
+            field = "fw_settings";
+            let subtopic = "fw/settings/"
+            let index = topic.indexOf(subtopic)
+            subtopic = topic.substring(index+subtopic.length);
+            index = topic.indexOf("/");
+            key = subtopic.substring(0,index);
+          }
+        }else if(topic.includes("app/settings")){
+          if(payload != null && payload != "" && typeof payload != "undefined"){
+            field = "app_settings";
+            let subtopic = "app/settings/"
+            let index = topic.indexOf(subtopic)
+            subtopic = topic.substring(index+subtopic.length);
+            index = topic.indexOf("/");
+            key = subtopic.substring(0,index);
+          }
         }
-        
+
         if(field != "" && payload != "" && key != "") // use it update json key
           device.updateDeviceJSON(uid,field,key,payload);
         else if(field != "" && payload != "")
@@ -142,7 +148,7 @@ aedes.on('publish', async function (packet, client) {
                   console.log("update: "+uid+" for:",fw);
                   let topic = dev.project+"/"+uid+"/fw/fota/update/set";
                   let payload = {
-                    url : config.web.protocol+config.web.domain+config.web.fw_path+fw.filename+"?token="+fw.token
+                    url : config.web.protocol+config.web.domain+config.web.fw_path+fw.filename+"/download?token="+fw.token
                   }
                   let packet = {
                     topic : topic,
