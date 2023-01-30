@@ -22,7 +22,7 @@ httpServer.listen(config.port.ws, function () {
 })
 
 var auth = require('./src/auth/auth.js');
-var device = require('./src/auth/device.js');
+var device = require('./src/device/device.js');
 
 auth.init();
 
@@ -120,8 +120,11 @@ aedes.on('publish', async function (packet, client) {
             let subtopic = "fw/settings/"
             let index = topic.indexOf(subtopic)
             subtopic = topic.substring(index+subtopic.length);
-            index = topic.indexOf("/");
-            key = subtopic.substring(0,index);
+            index = subtopic.indexOf("/");
+            if(index > -1)
+              key = subtopic.substring(0,index);
+            else
+              key = subtopic
           }
         }else if(topic.includes("app/settings")){
           if(payload != null && payload != "" && typeof payload != "undefined"){
@@ -129,8 +132,11 @@ aedes.on('publish', async function (packet, client) {
             let subtopic = "app/settings/"
             let index = topic.indexOf(subtopic)
             subtopic = topic.substring(index+subtopic.length);
-            index = topic.indexOf("/");
-            key = subtopic.substring(0,index);
+            index = subtopic.indexOf("/");
+            if(index > -1)
+              key = subtopic.substring(0,index);
+            else
+              key = subtopic
           }
         }
 
@@ -141,7 +147,27 @@ aedes.on('publish', async function (packet, client) {
 
             if(field == "fw_version"){
               // check if fw upload is needed
-              device.checkDeviceVersion(uid,(err,dev,fw)=>{
+              device.checkDeviceFWVersion(uid,(err,dev,fw)=>{
+                if(err)
+                  console.log(err);
+                else if(fw != null){
+                  console.log("update: "+uid+" for:",fw);
+                  let topic = dev.project+"/"+uid+"/fw/fota/update/set";
+                  let payload = {
+                    url : config.web.protocol+config.web.domain+config.web.fw_path+fw.filename+"/download?token="+fw.token
+                  }
+                  let packet = {
+                    topic : topic,
+                    payload : JSON.stringify(payload)
+                  }
+                  client.publish(packet,(err)=>{
+                    if(err) console.log(err)
+                  })
+                }
+              });
+            }else if(field == "app_version"){
+              // check if fw upload is needed
+              device.checkDeviceAppVersion(uid,(err,dev,fw)=>{
                 if(err)
                   console.log(err);
                 else if(fw != null){

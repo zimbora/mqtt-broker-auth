@@ -5,7 +5,7 @@ var async = require('async')
 
 var self = module.exports = {
 
-  checkDeviceVersion : async function(uid,cb){
+  checkDeviceFWVersion : async function(uid,cb){
     let res = null;
     let update = false;
     let err = null;
@@ -35,14 +35,14 @@ var self = module.exports = {
         }
 
 
-        let db_version = "";
+        let db_fw_version = "";
         try{
-          let arr_version = rows[0].version.split(".");
+          let arr_version = rows[0].fw_version.split(".");
           arr_version.forEach((item, i) => {
             if(i==0)
-            db_version = Number(item);
+            db_fw_version = Number(item);
             else
-            db_version += "."+Number(item);
+            db_fw_version += "."+Number(item);
           });
         }catch(e){
           return cb(e,null,null);
@@ -53,13 +53,83 @@ var self = module.exports = {
           return cb(error,null,null);
         }
         //rows[0].version = semver.clean(rows[0].version)
-        if(!semver.valid(db_version)){
-          let error = "db_version not valid: "+db_version;
+        if(!semver.valid(db_fw_version)){
+          let error = "db_fw_version not valid: "+db_fw_version;
           return cb(error,null,null);
         }
 
         try{
-          if(semver.lt(fw_version, db_version)){
+          if(semver.lt(fw_version, db_fw_version)){
+            console.log("update version for device:",uid)
+            return cb(null,res[0],rows[0]);
+          }else{
+            console.log("device already has the latest version:",uid)
+            return cb(null,res[0],null);
+          }
+        }catch(e){
+          console.log(e)
+          return cb(e,null,null);
+        }
+
+      }
+    }
+  },
+
+  checkDeviceAppVersion : async function(uid,cb){
+    let res = null;
+    let update = false;
+    let err = null;
+
+    try{ res = await getDevice(uid)}
+    catch(err){ console.log(err);}
+
+    if(res != null && res.length > 0){
+      try{ rows = await getLatestAppVersion(res[0].model,res[0].release)}
+      catch(err){ return cb(err,null,null);}
+
+      if(rows == 0){
+        return cb(null,null,null);
+
+      let fw_version = "";
+      }else{
+        try{
+          let arr_app_version = res[0].app_version.split(".");
+          arr_app_version.forEach((item, i) => {
+            if(i==0)
+            app_version = Number(item);
+            else
+            app_version += "."+Number(item);
+          });
+        }catch(e){
+          return cb(e,null,null);
+        }
+
+
+        let db_app_version = "";
+        try{
+          let arr_version = rows[0].app_version.split(".");
+          arr_version.forEach((item, i) => {
+            if(i==0)
+            db_app_version = Number(item);
+            else
+            db_app_version += "."+Number(item);
+          });
+        }catch(e){
+          return cb(e,null,null);
+        }
+
+        if(!semver.valid(app_version)){
+          let error = "app_version not valid: "+app_version;
+          return cb(error,null,null);
+        }
+        //rows[0].version = semver.clean(rows[0].version)
+        if(!semver.valid(db_app_version)){
+          let error = "db_app_version not valid: "+db_app_version;
+          return cb(error,null,null);
+        }
+
+        try{
+          if(semver.lt(app_version, db_app_version)){
             console.log("update version for device:",uid)
             return cb(null,res[0],rows[0]);
           }else{
@@ -193,6 +263,9 @@ async function updateDevice(uid,field,value){
 
 async function updateDeviceJSON(uid,field,key,value){
 
+  console.log("field:",field)
+  console.log("key:",key)
+  console.log("value:",value)
   return new Promise((resolve,reject) => {
 
     try{
@@ -245,15 +318,51 @@ async function getLatestFwVersion(model,release){
 
 
       if(release == "stable"){
-        query = `SELECT version,filename,token FROM ?? where fwModel_name = ? and release = ? ORDER BY CAST(SUBSTRING_INDEX(version, '.', 1) AS UNSIGNED) DESC,
-         CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(version, '.', 2), '.', -1) AS UNSIGNED) DESC,
-         CAST(SUBSTRING_INDEX(version, '.', -1) AS UNSIGNED) DESC
+        query = `SELECT fw_version,filename,token FROM ?? where fwModel_name = ? and release = ? ORDER BY CAST(SUBSTRING_INDEX(fw_version, '.', 1) AS UNSIGNED) DESC,
+         CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(fw_version, '.', 2), '.', -1) AS UNSIGNED) DESC,
+         CAST(SUBSTRING_INDEX(fw_version, '.', -1) AS UNSIGNED) DESC
          LIMIT 1`;
         table = ["firmwares",model,release];
       }else{
-        query = `SELECT version,filename,token FROM ?? where fwModel_name = ? ORDER BY CAST(SUBSTRING_INDEX(version, '.', 1) AS UNSIGNED) DESC,
-         CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(version, '.', 2), '.', -1) AS UNSIGNED) DESC,
-         CAST(SUBSTRING_INDEX(version, '.', -1) AS UNSIGNED) DESC
+        query = `SELECT fw_version,filename,token FROM ?? where fwModel_name = ? ORDER BY CAST(SUBSTRING_INDEX(fw_version, '.', 1) AS UNSIGNED) DESC,
+         CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(fw_version, '.', 2), '.', -1) AS UNSIGNED) DESC,
+         CAST(SUBSTRING_INDEX(fw_version, '.', -1) AS UNSIGNED) DESC
+         LIMIT 1`;
+        table = ["firmwares",model];
+      }
+
+      query = mysql.format(query,table);
+      conn.query(query,function(err,rows){
+        db.close_db_connection(conn);
+        if(err) return reject(err)
+        else{
+          return resolve(rows);
+        }
+      });
+    });
+  });
+}
+
+async function getLatestAppVersion(model,release){
+
+  return new Promise((resolve,reject) => {
+
+    db.getConnection((err,conn)=>{
+      if(err) return reject(err);
+
+      let query = "";
+      let table = [];
+
+      if(release == "stable"){
+        query = `SELECT app_version,filename,token FROM ?? where fwModel_name = ? and release = ? ORDER BY CAST(SUBSTRING_INDEX(app_version, '.', 1) AS UNSIGNED) DESC,
+         CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(app_version, '.', 2), '.', -1) AS UNSIGNED) DESC,
+         CAST(SUBSTRING_INDEX(app_version, '.', -1) AS UNSIGNED) DESC
+         LIMIT 1`;
+        table = ["firmwares",model,release];
+      }else{
+        query = `SELECT app_version,filename,token FROM ?? where fwModel_name = ? ORDER BY CAST(SUBSTRING_INDEX(app_version, '.', 1) AS UNSIGNED) DESC,
+         CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(app_version, '.', 2), '.', -1) AS UNSIGNED) DESC,
+         CAST(SUBSTRING_INDEX(app_version, '.', -1) AS UNSIGNED) DESC
          LIMIT 1`;
         table = ["firmwares",model];
       }
