@@ -1,7 +1,7 @@
 // mqtt
 const aedes = require('aedes')();
 const server = require('net').createServer(aedes.handle);;
-var config = require('./config/env');
+var config = require('./config');
 
 console.log(config)
 console.log("process.env.NODE_ENV",process.env.NODE_ENV)

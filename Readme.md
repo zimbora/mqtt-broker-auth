@@ -24,8 +24,43 @@ If the `level` of `clientId` is >= 1 and < 3 only subscribe on the respective to
 
 ## Configuration
 
-The default configuration uses ./config/env/development.js file
-To use another configuration `NODE_ENV` variable has to be set with the respective filename
+The default configuration uses ./config/index.js file
+To use another configuration define the respective variables before call the program
 
-For example, in order to use docker-dev.js file
-NODE_ENV = docker-dev
+Use a docker-compose file to do that
+
+version: '3.9'
+services:
+  mqtt:
+    build: ./mqtt-broker-auth
+    image: mqtt:0.3.3
+    command: node index.js
+    environment:
+      # web
+      #- HTTP_PROTOCOL=http://
+      - DOMAIN=192.168.1.108
+      # MQTT && WebSocket
+      - MQTT_PORT=1883
+      #- MQTTS_PORT
+      - WS_PORT=8888
+      #- WSS_PORT
+      # DataBase
+      - DB_HOST=host.docker.internal
+      #- DB_PORT=3306
+      #- DB_USER=user
+      #- DB_PWD=user_pwd
+      #- DB_NAME=mqtt-aedes
+    ports:
+      - '1883:1883'
+      - '8888:8888'
+    expose:
+      # Opens ports on the container
+      - '1883'
+      - '8888'
+    volumes:
+      - .:/usr/app/mqtt/
+      - /usr/app/mqtt/node_modules
+
+# Names our volume
+volumes:
+  my-db:

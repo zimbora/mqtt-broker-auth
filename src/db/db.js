@@ -1,4 +1,4 @@
-var config = require('../../config/env');
+var config = require('../../config');
 var mysql = require('mysql2');
 
 var pool;
