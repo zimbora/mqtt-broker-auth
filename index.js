@@ -4,7 +4,6 @@ const server = require('net').createServer(aedes.handle);;
 var config = require('./config');
 
 console.log(config)
-console.log("process.env.NODE_ENV",process.env.NODE_ENV)
 
 // websocket
 const httpServer = require('http').createServer()

@@ -27,8 +27,8 @@ If the `level` of `clientId` is >= 1 and < 3 only subscribe on the respective to
 The default configuration uses ./config/index.js file
 To use another configuration define the respective variables before call the program
 
-Use a docker-compose file to do that
-
+Use a docker-compose file to do that:
+```
 version: '3.9'
 services:
   mqtt:
@@ -60,7 +60,4 @@ services:
     volumes:
       - .:/usr/app/mqtt/
       - /usr/app/mqtt/node_modules
-
-# Names our volume
-volumes:
-  my-db:
+```
