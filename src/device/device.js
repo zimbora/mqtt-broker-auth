@@ -263,9 +263,6 @@ async function updateDevice(uid,field,value){
 
 async function updateDeviceJSON(uid,field,key,value){
 
-  console.log("field:",field)
-  console.log("key:",key)
-  console.log("value:",value)
   return new Promise((resolve,reject) => {
 
     try{

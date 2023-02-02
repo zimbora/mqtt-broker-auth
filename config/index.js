@@ -7,7 +7,7 @@ module.exports = {
   port:{
     mqtt : process.env.MQTT_PORT    || 1883,
     mqtts : process.env.MQTTS_PORT  || 8883,
-    ws : process.env.WS_PORT        || 80,
+    ws : process.env.WS_PORT        || 8888,
     wss : process.env.WSS_PORT      || 443,
   },
   db: {

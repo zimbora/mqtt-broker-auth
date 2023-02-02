@@ -109,10 +109,15 @@ aedes.on('publish', async function (packet, client) {
           field = "model";
         }else if(topic.endsWith("/ar/set")){
           field = "autorequests"
+          payload = JSON.stringify(payload);
         }else if(topic.endsWith("/alarm/set")){
           field = "alarms"
+          payload = JSON.stringify(payload);
         }else if(topic.endsWith("/js/code/set")){
           field = "js_program"
+        }else if(topic.endsWith("app/setpoints/set")){
+          field = "setpoints"
+          payload = JSON.stringify(payload);
         }else if(topic.includes("fw/settings")){
           if(payload != null && payload != "" && typeof payload != "undefined"){
             field = "fw_settings";
