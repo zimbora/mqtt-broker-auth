@@ -14,6 +14,11 @@ server.listen(config.port.mqtt, function () {
     console.log(`MQTT Broker running on port: ${config.port.mqtt}`);
 });
 
+server.on('error', function (err) {
+   console.log('Server error', err)
+   process.exit(1)
+ })
+
 // websocket
 ws.createServer({ server: httpServer }, aedes.handle)
 httpServer.listen(config.port.ws, function () {
@@ -28,9 +33,9 @@ auth.init();
 // authenticate the connecting client
 aedes.authenticate = async (client, username, password, callback) => {
     password = Buffer.from(password, 'base64').toString();
-    let authorized = auth.checkUser(username,password);
+    let authorized = await auth.checkUser(username,password);
     if(authorized){
-        auth.addClient(client.id,username,password);
+        await auth.addClient(client.id,username,password);
         return callback(null, true);
     }else{
       console.log('Error ! Authentication failed.')
@@ -68,6 +73,14 @@ aedes.authorizePublish = async (client, packet, callback) => {
 // emitted when a client connects to the broker
 aedes.on('client', function (client) {
     console.log(`[CLIENT_CONNECTED] Client ${(client ? client.id : client)} connected to broker ${aedes.id}`)
+})
+
+aedes.on('clientError', function (client, err) {
+  console.log('client error', client.id, err.message, err.stack)
+})
+
+aedes.on('connectionError', function (client, err) {
+  console.log('client error', client, err.message, err.stack)
 })
 
 // emitted when a client disconnects from the broker
