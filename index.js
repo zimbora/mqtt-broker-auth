@@ -32,7 +32,14 @@ auth.init();
 
 // authenticate the connecting client
 aedes.authenticate = async (client, username, password, callback) => {
-    password = Buffer.from(password, 'base64').toString();
+
+    console.log("username:",username);
+    console.log("password:",password);
+    if(Buffer.isBuffer(password) || typeof password === 'string')
+      password = Buffer.from(password, 'base64').toString();
+    else
+      return callback(e, false);
+
     let authorized = await auth.checkUser(username,password);
     if(authorized){
         await auth.addClient(client.id,username,password);
