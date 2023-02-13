@@ -10,11 +10,15 @@ module.exports = {
     ws : process.env.WS_PORT        || 8888,
     wss : process.env.WSS_PORT      || 443,
   },
-  db: {
+  mysqldb: {
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 3306,
     user: process.env.DB_USER || 'user',
     pwd: process.env.DB_PWD   || 'user_pwd',
     name: process.env.DB_NAME || 'mqtt-aedes',
+  },
+  mongodb: {
+    url: process.env.MONGO_URL || 'mongodb://127.0.0.1/aedes-clusters',
+    workers: process.env.WORKERS || 2
   }
 }

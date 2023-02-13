@@ -14,7 +14,7 @@ var self = module.exports = {
     catch(err){ console.log(err);}
 
     if(res != null && res.length > 0){
-      try{ rows = await getLatestFwVersion(res[0].model,res[0].release)}
+      try{ rows = await getLatestFwVersion(res[0].model,res[0].fw_release)}
       catch(err){ return cb(err,null,null);}
 
       if(rows == 0){
@@ -84,7 +84,7 @@ var self = module.exports = {
     catch(err){ console.log(err);}
 
     if(res != null && res.length > 0){
-      try{ rows = await getLatestAppVersion(res[0].model,res[0].release)}
+      try{ rows = await getLatestAppVersion(res[0].model,res[0].fw_release)}
       catch(err){ return cb(err,null,null);}
 
       if(rows == 0){
@@ -313,9 +313,8 @@ async function getLatestFwVersion(model,release){
       let query = "";
       let table = [];
 
-
       if(release == "stable"){
-        query = `SELECT fw_version,filename,token FROM ?? where fwModel_name = ? and release = ? ORDER BY CAST(SUBSTRING_INDEX(fw_version, '.', 1) AS UNSIGNED) DESC,
+        query = `SELECT fw_version,filename,token FROM ?? where fwModel_name = ? and fw_release = ? ORDER BY CAST(SUBSTRING_INDEX(fw_version, '.', 1) AS UNSIGNED) DESC,
          CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(fw_version, '.', 2), '.', -1) AS UNSIGNED) DESC,
          CAST(SUBSTRING_INDEX(fw_version, '.', -1) AS UNSIGNED) DESC
          LIMIT 1`;
@@ -351,7 +350,7 @@ async function getLatestAppVersion(model,release){
       let table = [];
 
       if(release == "stable"){
-        query = `SELECT app_version,filename,token FROM ?? where fwModel_name = ? and release = ? ORDER BY CAST(SUBSTRING_INDEX(app_version, '.', 1) AS UNSIGNED) DESC,
+        query = `SELECT app_version,filename,token FROM ?? where fwModel_name = ? and fw_release = ? ORDER BY CAST(SUBSTRING_INDEX(app_version, '.', 1) AS UNSIGNED) DESC,
          CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(app_version, '.', 2), '.', -1) AS UNSIGNED) DESC,
          CAST(SUBSTRING_INDEX(app_version, '.', -1) AS UNSIGNED) DESC
          LIMIT 1`;
