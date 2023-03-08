@@ -17,7 +17,7 @@ const ws = require('websocket-stream')
 // best configuration mqemitter-reds + aedes-persistence-mongodb
 const mq = config.mq === 'redis'
   ? require('mqemitter-redis')({
-    port: config.redis.port || 6379
+    connectionString: config.redis.url
   })
   : require('mqemitter-mongodb')({
     url: config.mongodb.url
@@ -25,7 +25,7 @@ const mq = config.mq === 'redis'
 
 const persistence = config.persistence === 'redis'
   ? require('aedes-persistence-redis')({
-    port: config.redis.port
+    connectionString: config.redis.url
   })
   : require('aedes-persistence-mongodb')({
     url: config.mongodb.url,
@@ -108,13 +108,15 @@ function startAedes(){
         return callback(new Error("$SYS" + ' topic is reserved'))
       }
 
-      let authorized = await auth.checkPublishAuthorization(client.id,packet.topic)
-      if(authorized){
-        return callback(null);
-      }else{
-        console.log(`${client.id} not authorized to publish on topic: ${packet.topic}`);
-        return callback(new Error('You are not authorized to publish on this message topic.'));
-      }
+      if(client && client.hasOwnProperty("id")){
+        let authorized = await auth.checkPublishAuthorization(client.id,packet.topic)
+        if(authorized){
+          return callback(null);
+        }else{
+          console.log(`${client.id} not authorized to publish on topic: ${packet.topic}`);
+          return callback(new Error('You are not authorized to publish on this message topic.'));
+        }
+      }else console.log(client);
   }
 
   // emitted when a client connects to the broker
