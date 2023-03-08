@@ -1,6 +1,11 @@
 
 # Aedes-MQTT-Broker
 
+MQTT broker working in cluster mode. Number of workers can be set using WORKERS var env.
+
+## TODO
+- MQTTS
+
 ## Working mode
 
 ### Users
