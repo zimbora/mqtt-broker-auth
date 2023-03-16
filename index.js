@@ -14,7 +14,7 @@ var freeRTOS2 = require('./src/device/freeRTOS2.js');
 const httpServer = require('http').createServer()
 const ws = require('websocket-stream')
 
-// best configuration mqemitter-reds + aedes-persistence-mongodb
+// best configuration mqemitter-redis + aedes-persistence-mongodb
 const mq = config.mq === 'redis'
   ? require('mqemitter-redis')({
     connectionString: config.redis.url
@@ -129,7 +129,7 @@ function startAedes(){
   })
 
   aedes.on('connectionError', function (client, err) {
-    console.log('client error', client, err.message, err.stack)
+    console.log('connection error', connection.id, err.message, err.stack)
   })
 
   // emitted when a client disconnects from the broker
