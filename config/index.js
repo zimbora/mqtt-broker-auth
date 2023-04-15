@@ -1,4 +1,6 @@
 module.exports = {
+  mq : process.env.MQ || "redis", // redis or mongo
+  persistence : process.env.PERSISTENCE || "mongo", //"redis or mongo",
   web:{
     protocol : process.env.HTTP_PROTOCOL  || "http://",
     domain: process.env.DOMAIN            || '192.168.1.108',
@@ -17,8 +19,17 @@ module.exports = {
     pwd: process.env.DB_PWD   || 'user_pwd',
     name: process.env.DB_NAME || 'mqtt-aedes',
   },
+<<<<<<< HEAD
   mongodb: {
     url: process.env.MONGO_URL || 'mongodb://127.0.0.1/aedes-clusters',
     workers: process.env.WORKERS || 2
+=======
+  redis: {
+    url : process.env.REDIS_URL || 'redis://127.0.0.1:55457'
+  },
+  mongodb: {
+    url: process.env.MONGO_URL || 'mongodb://127.0.0.1/aedes-clusters',
+    workers: process.env.WORKERS || 3
+>>>>>>> 702bb6a76cacddc1d530f743806e0ca01d7f9872
   }
 }

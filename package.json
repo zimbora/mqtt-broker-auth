@@ -12,10 +12,14 @@
   "dependencies": {
     "aedes": "^0.48.1",
     "aedes-persistence-mongodb": "^9.1.1",
+    "aedes-persistence-redis": "^9.0.2",
     "async": "^3.2.4",
     "cluster": "^0.7.7",
+    "lodash": "^4.17.21",
+    "md5": "^2.3.0",
     "mqemitter-mongodb": "^8.1.0",
-    "mysql2": "^3.2.0",
+    "mqemitter-redis": "^5.0.0",
+    "mysql2": "^2.3.3",
     "net": "^1.0.2",
     "semver": "^7.3.8",
     "websocket-stream": "^5.5.2"

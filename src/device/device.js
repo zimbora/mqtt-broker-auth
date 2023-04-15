@@ -2,6 +2,8 @@ const semver = require('semver')
 var mysql = require('mysql2')
 var db = require('../db/db.js')
 var async = require('async')
+var md5 = require('md5');
+var _ = require('lodash');
 
 var self = module.exports = {
 
@@ -14,7 +16,7 @@ var self = module.exports = {
     catch(err){ console.log(err);}
 
     if(res != null && res.length > 0){
-      try{ rows = await getLatestFwVersion(res[0].model,res[0].release)}
+      try{ rows = await getLatestFwVersion(res[0].model,res[0].fw_release)}
       catch(err){ return cb(err,null,null);}
 
       if(rows == 0){
@@ -60,10 +62,9 @@ var self = module.exports = {
 
         try{
           if(semver.lt(fw_version, db_fw_version)){
-            console.log("update version for device:",uid)
+            console.log("fw update version for device:",uid)
             return cb(null,res[0],rows[0]);
           }else{
-            console.log("device already has the latest version:",uid)
             return cb(null,res[0],null);
           }
         }catch(e){
@@ -84,7 +85,7 @@ var self = module.exports = {
     catch(err){ console.log(err);}
 
     if(res != null && res.length > 0){
-      try{ rows = await getLatestAppVersion(res[0].model,res[0].release)}
+      try{ rows = await getLatestAppVersion(res[0].model,res[0].fw_release)}
       catch(err){ return cb(err,null,null);}
 
       if(rows == 0){
@@ -130,10 +131,9 @@ var self = module.exports = {
 
         try{
           if(semver.lt(app_version, db_app_version)){
-            console.log("update version for device:",uid)
+            console.log("update app version for device:",uid)
             return cb(null,res[0],rows[0]);
           }else{
-            console.log("device already has the latest version:",uid)
             return cb(null,res[0],null);
           }
         }catch(e){
@@ -145,10 +145,13 @@ var self = module.exports = {
     }
   },
 
-  updateDevice : async function(uid,field,value,cb){
+  updateDevice : async function(client,project,uid,field,value,cb){
 
     let res = null;
     let update = false;
+
+    if(value == null || value == "")
+      return;
 
     try{ res = await getDevice(uid)}
     catch(err){ console.log(err);}
@@ -170,12 +173,12 @@ var self = module.exports = {
 
   },
 
-  updateDeviceJSON : async function(uid,field,key,value){
+  updateDeviceJSON : async function(client,project,uid,field,key,value){
 
     let res = null;
     let update = false;
 
-    try{ res = await getDevice(uid)}
+    try{res = await getDevice(uid)}
     catch(err){ console.log(err);}
 
     if(res == null || res.length == 0){
@@ -184,15 +187,88 @@ var self = module.exports = {
 
       if(res.affectedRows > 0)
         update = true;
-    }else update = true;
+    }else{
+      if(client.id.startsWith("uid:")){
+        update = false;
+        // check if there is already a configuration on device.
+        try{ res = await getDeviceProperty(uid,field,key)
+
+          if(res != null){
+            try{
+              value = JSON.parse(value);
+              //check if config on device is different from config on db
+              //if(md5(res) != md5(value)){ // md5 doesn't work well bcs of the key order
+              if(!_.isEqual(res,value)){
+                // update config on device with config in db
+                update = false;
+                let route = "";
+                if(field.startsWith("fw"))
+                  route = "fw"
+                else if(field.startsWith("app"))
+                  route = "app"
+
+                if(key != "wifi"){ // device has always preference on it, it can be extended to modem configs
+                  let topic = project+"/"+uid+"/"+route+"/settings/"+key+"/set";
+                  let payload = JSON.stringify(res);
+
+                  let packet = {
+                    topic : topic,
+                    payload : payload
+                  }
+                  client.publish(packet,(err)=>{
+                    if(err) console.log(err)
+                  })
+                }else
+                  update = true;
+
+              }
+            }catch(err){
+              console.log("!! struct in device is not in json format, fw has an error");
+            }
+          }else{
+            try{ res = await updateDeviceJSON(uid,field,key,value)}
+            catch(err){ console.log(err);}
+          }
+        }catch(err){ console.log(err);}
+
+      }else update = true;
+    }
 
     if(update){
       try{ res = await updateDeviceJSON(uid,field,key,value)}
       catch(err){ console.log(err);}
     }
 
-  }
+  },
 
+  checkMD5 : async function(uid,field,payload){
+
+    return new Promise(async(resolve,reject) => {
+      if(payload == null) resolve(null);
+
+      try{
+        payload = JSON.parse(payload)
+      }catch(err){reject(err);}
+
+      if(!payload.hasOwnProperty("md5"))
+        resolve();
+
+      try{
+        res = await getDeviceField(uid,field);
+        try{
+          //res = JSON.stringify(res);
+          if(md5(res) == payload.md5){
+            resolve(null)
+          }
+          else{
+            console.log("update file {} for uid {}",field,uid);
+            resolve(res);
+          }
+
+        }catch(err){reject(err)};
+      }catch(err){reject(err);}
+    });
+  }
 }
 
 
@@ -241,9 +317,8 @@ async function updateDevice(uid,field,value){
 
   return new Promise((resolve,reject) => {
 
-    try{
-      value = JSON.parse(value);
-    }catch{}
+    if(value == "" || value == null)
+      return resolve();
 
     db.getConnection((err,conn)=>{
       if(err) return reject(err);
@@ -254,7 +329,9 @@ async function updateDevice(uid,field,value){
       query = mysql.format(query,table);
       conn.query(query,function(err,rows){
         db.close_db_connection(conn);
-        if(err) return reject(err)
+        if(err){
+          return reject(err)
+        }
         else return resolve(rows);
       });
     });
@@ -313,9 +390,8 @@ async function getLatestFwVersion(model,release){
       let query = "";
       let table = [];
 
-
       if(release == "stable"){
-        query = `SELECT fw_version,filename,token FROM ?? where fwModel_name = ? and release = ? ORDER BY CAST(SUBSTRING_INDEX(fw_version, '.', 1) AS UNSIGNED) DESC,
+        query = `SELECT fw_version,filename,token FROM ?? where fwModel_name = ? and fw_release = ? ORDER BY CAST(SUBSTRING_INDEX(fw_version, '.', 1) AS UNSIGNED) DESC,
          CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(fw_version, '.', 2), '.', -1) AS UNSIGNED) DESC,
          CAST(SUBSTRING_INDEX(fw_version, '.', -1) AS UNSIGNED) DESC
          LIMIT 1`;
@@ -351,7 +427,7 @@ async function getLatestAppVersion(model,release){
       let table = [];
 
       if(release == "stable"){
-        query = `SELECT app_version,filename,token FROM ?? where fwModel_name = ? and release = ? ORDER BY CAST(SUBSTRING_INDEX(app_version, '.', 1) AS UNSIGNED) DESC,
+        query = `SELECT app_version,filename,token FROM ?? where fwModel_name = ? and fw_release = ? ORDER BY CAST(SUBSTRING_INDEX(app_version, '.', 1) AS UNSIGNED) DESC,
          CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(app_version, '.', 2), '.', -1) AS UNSIGNED) DESC,
          CAST(SUBSTRING_INDEX(app_version, '.', -1) AS UNSIGNED) DESC
          LIMIT 1`;
@@ -370,6 +446,53 @@ async function getLatestAppVersion(model,release){
         if(err) return reject(err)
         else{
           return resolve(rows);
+        }
+      });
+    });
+  });
+}
+
+async function getDeviceField(uid,field){
+
+  return new Promise((resolve,reject) => {
+
+    db.getConnection((err,conn)=>{
+      if(err) return reject(err);
+
+      let query = "SELECT ?? FROM ?? where uid = ?";
+      let table = [field,"devices",uid];
+      query = mysql.format(query,table);
+      conn.query(query,function(err,rows){
+        db.close_db_connection(conn);
+        if(err) return reject(err)
+        else{
+          if(rows.length == 1 ){
+            return resolve(rows[0][field]);
+          }else return resolve(null);
+        }
+      });
+    });
+  });
+}
+
+async function getDeviceProperty(uid,field,key){
+
+  return new Promise((resolve,reject) => {
+
+    db.getConnection((err,conn)=>{
+      if(err) return reject(err);
+
+      let query = "SELECT ?? FROM ?? where uid = ?";
+      let table = [field,"devices",uid];
+
+      query = mysql.format(query,table);
+      conn.query(query,function(err,rows){
+        db.close_db_connection(conn);
+        if(err) return reject(err)
+        else{
+          if(rows.length == 1 && rows[0].hasOwnProperty(field) && rows[0][field].hasOwnProperty(key)){
+            return resolve(rows[0][field][key]);
+          }else return resolve(null);
         }
       });
     });
