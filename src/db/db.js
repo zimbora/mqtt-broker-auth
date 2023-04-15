@@ -6,11 +6,11 @@ var pool;
 function connect(cb){
     pool      =    mysql.createPool({
       connectionLimit : 100,
-      host     : config.db.host,
-      port     : config.db.port,
-      user     : config.db.user,
-      password : config.db.pwd,
-      database : config.db.name,
+      host     : config.mysqldb.host,
+      port     : config.mysqldb.port,
+      user     : config.mysqldb.user,
+      password : config.mysqldb.pwd,
+      database : config.mysqldb.name,
       debug    : false
   });
   pool.getConnection(function(err,connection){
@@ -43,9 +43,9 @@ function pingMySQL(connection){
 function get_non_persistent_db_connection(db_name,cb){
   let pool2      =    mysql.createPool({
       connectionLimit : 100,
-      host     : config.db.host,
-      user     : config.db.user,
-      password : config.db.pwd,
+      host     : config.mysqldb.host,
+      user     : config.mysqldb.user,
+      password : config.mysqldb.pwd,
       database : db_name,
       debug    :  false,
       multipleStatements: true
@@ -57,7 +57,7 @@ function get_non_persistent_db_connection(db_name,cb){
 
 function close_db_connection(connection){
   if(connection != null){
-    connection.release();
+    connection.destroy();
   }
 }
 
