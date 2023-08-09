@@ -1,4 +1,4 @@
-
+const moment = require('moment');
 var mysql = require('mysql2')
 var db = require('../db/db.js')
 var async = require('async')
@@ -14,110 +14,122 @@ var self = module.exports = {
 
   checkUser : async function(user,pwd){
 
-    try{ rows = await getUser(user,pwd)}
+    try{ user = await getUser(user,pwd)}
     catch(err){ console.log(err); return false;}
 
-    if(rows != null && rows.length == 1)
-      return true
-    else return false;
+    return user;
 
   },
 
-  addClient : async function(clientID,user,pwd){
+  checkClient : async function(nick){
 
-    let res = null;
-    try{ res = await getAssociatedUser(clientID)}
-    catch(err){ console.log(err);}
+    try{ client = await getClient(nick)}
+    catch(err){ console.log(err); return null;}
 
-    if(res == null || res.length == 0){
-      try{ res = await insertClientID(clientID,user,pwd)}
-      catch(err){ console.log(err);}
-    }else{
-      try{ res = await updateClientID(clientID,user,pwd)}
-      catch(err){ console.log(err);}
-    }
-    /*
-    promise without await
-    db.getConnection((err,conn)=>{
-      if(err) return cb(err,false) ;
-      else{
-        getAssociatedUser(conn,clientID)
-          .then(rows => console.log(rows))
-          .catch(err => console.log(err))
-        try{
-          let res = await getAssociatedUser(conn,clientID);
-          console.log(res)
-        }catch(err) console.log(err);
+    return client;
+  },
+
+  addClient : async function(nick,user_type,pwd){
+
+    let user = await getUser(user_type,pwd);
+    let client = await getClient(nick);
+
+    if(!client){
+      try{
+        res = await insertClient(nick,user.id)
+        return;
       }
-
-    })
-    */
+      catch(err){
+        console.log(err);
+        return;
+      }
+    }else{
+      try{
+        res = await updateClient(nick,user.id)
+        return;
+      }
+      catch(err){
+        console.log(err);
+        return;
+      }
+    }
   },
 
-  checkPublishAuthorization : async function(clientID, topic){
+  checkPublishAuthorization : async function(nick, topic){
 
-    if(topic.includes(clientID)) // if client is writting on own topic return true
+    if(topic.includes(nick)) // if client is writting on own topic return true
       return true;
 
     let res = null;
-    try{ res = await getAssociatedUserLevel(clientID)}
+    try{ res = await getAssociatedUserByNick(nick)}
     catch(err){ console.log(err);}
 
-    if(res != null && res.length > 0){
-      if(res[0].level >= 4) // if client is admin allow everything
+    let clientID;
+    if(res != null){
+       clientID = res.client_id;
+      if(res.level >= 4) // if client is admin allow everything
         return true;
     }
 
     // check if client is authorized to publish on topic
-    if(!topic.includes("uid:"))
+    if(topic.includes("uid:")){
+      let index = topic.indexOf("uid:")
+      let uid = topic.substr(index);
+      index = uid.indexOf("/");
+      uid = uid.substr(0,index);
+
+      try{ res = await getPermission(clientID,uid)}
+      catch(err){ console.log(err);}
+
+      if(res != null){
+        if(res.level >= 3)
+          return true;
+      }
       return false;
-
-    let index = topic.indexOf("uid:")
-    let uid = topic.substr(index);
-    index = uid.indexOf("/");
-    uid = uid.substr(0,index);
-
-    try{ res = await getPermission(clientID,uid)}
-    catch(err){ console.log(err);}
-
-    if(res != null && res.length > 0){
-      if(res[0].level >= 3)
-        return true;
+    }else{
+      return true;
     }
-    return false;
+
   },
 
-  checkSubscribeAuthorization : async function(clientID, topic){
+  checkSubscribeAuthorization : async function(nick, topic){
 
-    if(topic.includes(clientID)) // if client is writting on own topic return true
+    if(topic.includes(nick)) // if client is writting on own topic return true
       return true;
 
-    let res = null;
-    try{ res = await getAssociatedUserLevel(clientID)}
+    try{ user = await getAssociatedUserByNick(nick)}
     catch(err){ console.log(err);}
 
-    if(res != null && res.length > 0){
-      if(res[0].level >= 4) // if client is admin allow everything
+    let clientID;
+    if(user != null){
+      //clientID = user[0].user_id;
+      if(user.level >= 4) // if client is admin allow everything
         return true;
     }
 
-    // check if client is authorized to publish on topic
+    // check if client is authorized to subscribe on topic
+    // Clients are only authorized to subscribe on devices topics, unless they have high level permissions
     if(!topic.includes("uid:"))
       return false;
 
     let index = topic.indexOf("uid:")
-    let uid = topic.substr(index);
-    index = uid.indexOf("/");
-    uid = uid.substr(0,index);
+    if(index > -1){
+      let uid = topic.substr(index);
+      index = uid.indexOf("/");
+      uid = uid.substr(0,index);
 
-    try{ res = await getPermission(clientID,uid)}
-    catch(err){ console.log(err);}
+      try{ permission = await getPermission(user.client_id,uid)}
+      catch(err){ console.log(err);}
 
-    if(res != null && res.length > 0){
-      if(res[0].level >= 1)
-        return true;
+      if(permission != null){
+        if(permission >= 1)
+          return true;
+      }
+      return false;
     }
-    return false;
+    else{
+      return true;
+    }
   },
 
 };
@@ -127,100 +139,124 @@ async function getUser(user,pwd){
 
   return new Promise((resolve,reject) => {
 
-    db.getConnection((err,conn)=>{
-      if(err) return reject(err);
+    let query = "SELECT level,id FROM ?? where type = ? and password = ?";
+    let table = ["users",user,pwd];
+    query = mysql.format(query,table);
 
-      let query = "SELECT ?? FROM ?? where idusers = ? and password = ?";
-      let table = ["level","users",user,pwd];
-
-      query = mysql.format(query,table);
-      conn.query(query,function(err,rows){
-        db.close_db_connection(conn);
-        if(err) return reject(err)
-        else return resolve(rows);
-      });
-    });
+    db.queryRow(query)
+    .then( rows => {
+      if(rows.length > 0)
+        return resolve(rows[0]);
+      else return resolve(null);
+    })
+    .catch( error => {
+      return reject(error);
+    })
   });
 }
 
 // mqtt clients
-async function getAssociatedUser(clientID){
+async function getAssociatedUserByNick(nick){
 
   return new Promise((resolve,reject) => {
 
-    db.getConnection((err,conn)=>{
-      if(err) return reject(err);
+    let query = "select users.id,users.level,users.type,clients.id as client_id from users inner join clients on clients.user_id = users.id and clients.nick = ?";
+    let table = [nick];
+    query = mysql.format(query,table);
 
-      let query = "SELECT ?? FROM ?? where idclients = ?";
-      let table = ["users_idusers","clients",clientID];
-
-      query = mysql.format(query,table);
-      conn.query(query,function(err,rows){
-        db.close_db_connection(conn);
-        if(err) return reject(err)
-        else return resolve(rows);
-      });
-    });
+    db.queryRow(query)
+    .then( rows => {
+      if(rows.length > 0)
+        return resolve(rows[0]);
+      else
+        return null;
+    })
+    .catch( error => {
+      return reject(error);
+    })
   });
 }
 
-async function getAssociatedUserLevel(clientID){
+async function getAssociatedUserById(clientId){
 
   return new Promise((resolve,reject) => {
 
-    db.getConnection((err,conn)=>{
-      if(err) return reject(err);
+    let query = "select users.id,users.level,users.type from users inner join clients on clients.user_id = users.id and clients.id = ?";
+    let table = [clientId];
+    query = mysql.format(query,table);
 
-      let query = "select users.level from users inner join clients on clients.users_idusers = users.idusers and clients.idclients = ?";
-      let table = [clientID];
-
-      query = mysql.format(query,table);
-      conn.query(query,function(err,rows){
-        db.close_db_connection(conn);
-        if(err) return reject(err)
-        else return resolve(rows);
-      });
-    });
+    db.queryRow(query)
+    .then( rows => {
+      return resolve(rows);
+    })
+    .catch( error => {
+      return reject(error);
+    })
   });
 }
 
-async function insertClientID(clientID,user){
+// mqtt credentials
+async function getClient(nick){
 
   return new Promise((resolve,reject) => {
 
-    db.getConnection((err,conn)=>{
-      if(err) return reject(err);
+    let query = "SELECT id as client_id,user_id,gmail,name,avatar FROM clients where nick = ?";
+    let table = [nick];
+    query = mysql.format(query,table);
 
-      let query = "INSERT INTO ?? (??,??) VALUES (?,?)";
-      let table = ["clients","idclients","users_idusers",clientID,user];
-
-      query = mysql.format(query,table);
-      conn.query(query,function(err,rows){
-        db.close_db_connection(conn);
-        if(err) return reject(err)
-        else return resolve(rows);
-      });
-    });
+    db.queryRow(query)
+    .then( rows => {
+      if(rows.length > 0)
+        return resolve(rows[0]);
+      else return resolve(null);
+    })
+    .catch( error => {
+      return reject(error);
+    })
   });
 }
 
-async function updateClientID(clientID,user){
+async function insertClient(nick,userId){
 
   return new Promise((resolve,reject) => {
 
-    db.getConnection((err,conn)=>{
-      if(err) return reject(err);
+    let obj = {
+      user_id : userId,
+      nick : nick,
+      createdAt : moment().format('YYYY-MM-DD HH:mm:ss'),
+      updatedAt : moment().format('YYYY-MM-DD HH:mm:ss')
+    }
 
-      let query = "UPDATE ?? set ?? = ? where ?? = ?";
-      let table = ["clients","users_idusers",user,"idclients",clientID];
+    db.insert("clients",obj)
+    .then( rows => {
+      return resolve(rows);
+    })
+    .catch( error => {
+      return reject(error);
+    })
+  });
+}
 
-      query = mysql.format(query,table);
-      conn.query(query,function(err,rows){
-        db.close_db_connection(conn);
-        if(err) return reject(err)
-        else return resolve(rows);
-      });
-    });
+async function updateClient(nick,userId){
+
+  return new Promise((resolve,reject) => {
+
+    let obj = {
+      user_id : userId,
+      updatedAt : moment().format('YYYY-MM-DD HH:mm:ss')
+    };
+
+    let filter = {
+      nick : nick
+    };
+
+    db.update("clients",obj,filter)
+    .then( rows => {
+      return resolve(rows);
+    })
+    .catch( error => {
+      return reject(error);
+    })
   });
 }
 
@@ -229,58 +265,64 @@ async function getPermission(clientID,deviceID){
 
   return new Promise((resolve,reject) => {
 
-    db.getConnection((err,conn)=>{
-      if(err) return reject(err);
+    let query = "SELECT ?? FROM ?? where ?? = ? and ?? = ?";
+    let table = ["level","permissions","client_id",clientID,"device_id",deviceID];
+    query = mysql.format(query,table);
 
-      let query = "SELECT ?? FROM ?? where ?? = ? and ?? = ?";
-      let table = ["level","permissions","clients_idclients",clientID,"devices_uid",deviceID];
-
-      query = mysql.format(query,table);
-      conn.query(query,function(err,rows){
-        db.close_db_connection(conn);
-        if(err) return reject(err)
-        else return resolve(rows);
-      });
-    });
+    db.queryRow(query)
+    .then( rows => {
+      if(rows.length > 0)
+        return resolve(rows[0]);
+      else return null;
+    })
+    .catch( error => {
+      return reject(error);
+    })
   });
 }
 
 async function addPermission(clientID,deviceID,level){
-  //INSERT into `mqtt-aedes`.permissions (`clients_idclients`,`devices_uid`,`level`) values ("mqtt-explorer-e64bb6e9","uid:34865d234520",3);
+
   return new Promise((resolve,reject) => {
 
-    db.getConnection((err,conn)=>{
-      if(err) return reject(err);
+    let obj = {
+      client_id : clientId,
+      device_id : clientID,
+      level : level,
+      createdAt : moment().format('YYYY-MM-DD HH:mm:ss'),
+      updatedAt : moment().format('YYYY-MM-DD HH:mm:ss')
+    }
 
-      let query = "INSERT INTO ?? (??,??,??) values(?,?,?)";
-      let table = ["permissions","clients_idclients","devices_uid","level",clientID,deviceID,level];
-
-      query = mysql.format(query,table);
-      conn.query(query,function(err,rows){
-        db.close_db_connection(conn);
-        if(err) return reject(err)
-        else return resolve(rows);
-      });
-    });
+    db.insert("permissions",obj)
+    .then( rows => {
+      return resolve(rows);
+    })
+    .catch( error => {
+      return reject(error);
+    })
   });
 }
 
 async function updatePermission(clientID,deviceID,level){
-  //INSERT into `mqtt-aedes`.permissions (`clients_idclients`,`devices_uid`,`level`) values ("mqtt-explorer-e64bb6e9","uid:34865d234520",3);
+
   return new Promise((resolve,reject) => {
 
-    db.getConnection((err,conn)=>{
-      if(err) return reject(err);
+    let obj = {
+      level : level,
+      updatedAt : moment().format('YYYY-MM-DD HH:mm:ss')
+    };
 
-      let query = "UPDATE ?? set ?? = ? where ?? = ? and ?? = ?";
-      let table = ["permissions","level",level,"clients_idclients",clientID,"devices_uid",deviceID];
+    let filter = {
+      client_id : clientId,
+      device_id : deviceId
+    };
 
-      query = mysql.format(query,table);
-      conn.query(query,function(err,rows){
-        db.close_db_connection(conn);
-        if(err) return reject(err)
-        else return resolve(rows);
-      });
-    });
+    db.update("permissions",obj,filter)
+    .then( rows => {
+      return resolve(rows);
+    })
+    .catch( error => {
+      return reject(error);
+    })
   });
 }
