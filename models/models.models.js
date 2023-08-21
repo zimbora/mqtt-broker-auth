@@ -1,20 +1,24 @@
 
 module.exports = (sequelize,DataTypes)=>{
-	return sequelize.define("fwModels", {
+	return sequelize.define("models", {
 		name: {
-			type: DataTypes.STRING(64),
+			type: DataTypes.STRING,
 			unique: true
 		},
 		description: {
 			type: DataTypes.STRING
 		},
-		createdBy: {
+		model_table: {
+			type: DataTypes.STRING,
+			allowNull: true
+		},
+		logs_table: {
 			type: DataTypes.STRING,
 			allowNull: true
 		},
 	},
 	{
-		tableName: 'fwModels',
+		tableName: 'models',
 		freezeTableName: true
 	})
 }

@@ -32,7 +32,33 @@ module.exports = {
   },
   devices: {
     "rtls-linux" : {},
-    "freeRTOS2" : {}
+    "freeRTOS2" : {
+      project_table : "freeRTOS2",
+      logs_table : "logs_freeRTOS2",
+      models : {
+        "HH_GW_LTE":{
+          model_table : "HH",
+          logs_table : "logs_HH",
+        },
+        "HH_GW_WIFI":{
+          model_table : "HH",
+          logs_table : "logs_HH",
+        },
+        "MEA_GW_LTE":{
+          logs_table : "",
+        },
+        "MEA_GW_WIFI":{
+          logs_table : "",
+        },
+        "SLIM_GW_LTE":{
+          logs_table : "",
+        },
+        "SLIM_GW_WIFI":{
+          logs_table : "",
+        },
+
+      }
+    }
   },
   apps: {
     "HH" : {},

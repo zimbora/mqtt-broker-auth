@@ -13,6 +13,7 @@ var Firmware = require('../db/firmware.js');
 var config = require('../../config');
 
 var apps = config.apps;
+var dev_models = config.devices["freeRTOS2"].models;
 
 MACRO_UID_PREFIX          = "uid:"
 
@@ -83,6 +84,8 @@ module.exports = {
 
     // get device configuration
     if(topic == "model"){
+      if(dev_models[topic]){
+      }
       checkConfigs(project,device.uid,payload,client);
     }
 
@@ -360,17 +363,22 @@ async function checkDeviceFWVersion(uid,cb){
 
   let fw_version = "";
   let db_fw_version = "";
+  let project = null;
+  let model = null;
 
   try{ device = await Device.get(uid)}
   catch(err){ console.log(err);}
 
-  try{ project = await Project.getDevice(device.project,device.id)}
+  try{ project = await Project.getById(device.project_id)}
   catch(err){ console.log(err);}
 
-  if(project == null)
+  try{ model = await Model.getById(device.model_id)}
+  catch(err){ console.log(err);}
+
+  if(project == null || model == null)
     return cb(null,null,null);
 
-  try{ latestfw_version = await getLatestFwVersion(project.model,project.fw_release)}
+  try{ latestfw_version = await getLatestFwVersion(model.name,project.fw_release)}
   catch(err){ return cb(err,null,null);}
 
   if(latestfw_version == null)
@@ -431,17 +439,22 @@ async function checkDeviceAppVersion(uid,cb){
 
   let app_version = "";
   let db_app_version = "";
+  let project = null;
+  let model = null;
 
   try{ device = await Device.get(uid)}
   catch(err){ console.log(err);}
 
-  try{ project = await Project.getDevice(device.project,device.id)}
+  try{ project = await Project.getById(device.project_id)}
   catch(err){ console.log(err);}
 
-  if(project == null)
+  try{ model = await Model.getById(device.model_id)}
+  catch(err){ console.log(err);}
+
+  if(project == null || model == null)
     return cb(null,null,null);
 
-  try{ latestapp_version = await getLatestAppVersion(project.model,project.app_release)}
+  try{ latestapp_version = await getLatestAppVersion(model.name,project.app_release)}
   catch(err){ return cb(err,null,null);}
 
   if(latestapp_version == null)
@@ -500,7 +513,7 @@ async function getLatestFwVersion(model,release){
   return new Promise( async (resolve,reject) => {
 
     let modelId = 0;
-    try{ modelId = await Model.getId(model)}
+    try{ modelId = await Model.getById(model)}
     catch(err){ console.log(err);}
 
     if(modelId == null)
@@ -521,7 +534,7 @@ async function getLatestAppVersion(model,release){
   return new Promise( async (resolve,reject) => {
 
     let modelId = 0;
-    try{ modelId = await Model.getId(model)}
+    try{ modelId = await Model.getById(model)}
     catch(err){ console.log(err);}
 
     if(modelId == null)

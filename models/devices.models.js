@@ -3,15 +3,29 @@ module.exports = (sequelize,DataTypes)=>{
 	return sequelize.define("devices", {
 		uid: {
 			type: DataTypes.STRING,
-			allowNull: true
+			unique: true
 		},
-		project: {
+		project: { // deprecated
 			type: DataTypes.STRING,
 			allowNull: true
 		},
 		status: {
 			type: DataTypes.STRING,
 			allowNull: true
+		},
+		project_id: {
+			type: DataTypes.INTEGER,
+			references: {
+				model: 'projects',
+				key: 'id'
+			}
+		},
+		model_id: {
+			type: DataTypes.INTEGER,
+			references: {
+				model: 'models',
+				key: 'id'
+			}
 		},
 	},
 	{

@@ -3,6 +3,7 @@ module.exports = (sequelize,DataTypes)=>{
 	return sequelize.define("freeRTOS2", {
 		device_id: {
 			type: DataTypes.INTEGER,
+			unique: true,
 			references: {
 				model: 'devices',
 				key: 'id'

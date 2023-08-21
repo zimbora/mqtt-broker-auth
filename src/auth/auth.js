@@ -78,13 +78,12 @@ var self = module.exports = {
       index = uid.indexOf("/");
       uid = uid.substr(0,index);
 
-      try{ res = await getPermission(clientID,uid)}
+      try{ level = await getPermission(clientID,uid)}
       catch(err){ console.log(err);}
 
-      if(res != null){
-        if(res.level >= 3)
-          return true;
-      }
+      if(level != null && level >= 3)
+        return true;
+
       return false;
     }else{
       return true;
@@ -118,13 +117,12 @@ var self = module.exports = {
       index = uid.indexOf("/");
       uid = uid.substr(0,index);
 
-      try{ permission = await getPermission(user.client_id,uid)}
+      try{ level = await getPermission(user.client_id,uid)}
       catch(err){ console.log(err);}
 
-      if(permission != null){
-        if(permission >= 1)
-          return true;
-      }
+      if(level != null && level >= 1)
+        return true;
+
       return false;
     }
     else{
@@ -265,14 +263,14 @@ async function getPermission(clientID,deviceID){
 
   return new Promise((resolve,reject) => {
 
-    let query = "SELECT ?? FROM ?? where ?? = ? and ?? = ?";
-    let table = ["level","permissions","client_id",clientID,"device_id",deviceID];
+    let query = "SELECT level FROM permissions as p inner join devices as d where d.id = p.device_id and p.client_id =  ? and d.uid = ?";
+    let table = [clientID,deviceID];
     query = mysql.format(query,table);
 
     db.queryRow(query)
     .then( rows => {
       if(rows.length > 0)
-        return resolve(rows[0]);
+        return resolve(rows[0]?.level);
       else return null;
     })
     .catch( error => {

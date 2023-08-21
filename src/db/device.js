@@ -7,7 +7,7 @@ var self = module.exports = {
 	get : async (uid)=>{
 		return new Promise((resolve,reject) => {
 
-			let query = "SELECT id,uid,project,status FROM ?? where uid = ?";
+			let query = "SELECT id,uid,project_id,model_id,status FROM ?? where uid = ?";
 		    let table = ["devices",uid];
 		    query = mysql.format(query,table);
 
@@ -25,12 +25,11 @@ var self = module.exports = {
 		});
 	},
 
-	insert : async(uid, project)=>{
+	insert : async(uid)=>{
 
 		return new Promise((resolve,reject) => {
 			let obj = {
 				uid : uid,
-				project : project,
 				createdAt : moment().format('YYYY-MM-DD HH:mm:ss'),
 				updatedAt : moment().format('YYYY-MM-DD HH:mm:ss')
 			}
@@ -45,11 +44,10 @@ var self = module.exports = {
 		});
   	},
 
-  	update : async(uid,project,status)=>{
+  	updateStatus : async(uid,status)=>{
 		return new Promise((resolve,reject) => {
 
 		    let obj = {
-		      project : project,
 		      status : status,
 		      updatedAt : moment().format('YYYY-MM-DD HH:mm:ss')
 		    };
@@ -68,5 +66,47 @@ var self = module.exports = {
 	  });
   	},
 
+  	updateProject : async(uid,project_id)=>{
+		return new Promise((resolve,reject) => {
 
+		    let obj = {
+		      project_id : project_id,
+		      updatedAt : moment().format('YYYY-MM-DD HH:mm:ss')
+		    };
+
+		    let filter = {
+		      uid : uid,
+		    };
+
+		    db.update("devices",obj,filter)
+		    .then (rows => {
+		      return resolve(rows);
+		    })
+		    .catch(error => {
+		      return reject(error);
+			});
+	  });
+  	},
+
+  	updateModel : async(uid,model_id)=>{
+		return new Promise((resolve,reject) => {
+
+		    let obj = {
+		      model_id : model_id,
+		      updatedAt : moment().format('YYYY-MM-DD HH:mm:ss')
+		    };
+
+		    let filter = {
+		      uid : uid,
+		    };
+
+		    db.update("devices",obj,filter)
+		    .then (rows => {
+		      return resolve(rows);
+		    })
+		    .catch(error => {
+		      return reject(error);
+			});
+	  });
+  	},
 }

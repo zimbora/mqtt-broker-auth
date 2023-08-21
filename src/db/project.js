@@ -4,12 +4,12 @@ var db = require('../db/db.js');
 
 var self = module.exports = {
 
-	getDevice : async (project,deviceId)=>{
+	getById : async (projectId)=>{
 
 	  return new Promise((resolve,reject) => {
 
-	    let query = "SELECT * FROM ?? where device_id = ?";
-	    let table = [project,deviceId];
+	    let query = "SELECT * FROM ?? where id = ?";
+	    let table = ["projects",projectId];
 	    query = mysql.format(query,table);
 
 	    db.queryRow(query)
@@ -25,6 +25,68 @@ var self = module.exports = {
 	    });
 	  });
 	},
+
+	getByName : async (project)=>{
+
+	  return new Promise((resolve,reject) => {
+
+	    let query = "SELECT * FROM ?? where name = ?";
+	    let table = ["projects",project];
+	    query = mysql.format(query,table);
+
+	    db.queryRow(query)
+	    .then( rows => {
+	      if(rows.length > 0)
+	        return resolve(rows[0]);
+	      else
+	        return resolve(null);
+	    })
+	    .catch( err => {
+	      console.log(err);
+	      return resolve(null);
+	    });
+	  });
+	},
+
+	getAll : async ()=>{
+
+	  return new Promise((resolve,reject) => {
+
+	    let query = "SELECT id,name FROM ??";
+	    let table = ["projects"];
+	    query = mysql.format(query,table);
+
+	    db.queryRow(query)
+	    .then( rows => {
+		  return resolve(rows);
+	    })
+	    .catch( err => {
+	      console.log(err);
+	      return resolve(null);
+	    });
+	  });
+	},
+
+	insert : async(project, project_table, logs_table)=>{
+
+		return new Promise((resolve,reject) => {
+			let obj = {
+				name : project,
+				project_table : project_table,
+				logs_table : logs_table,
+				createdAt : moment().format('YYYY-MM-DD HH:mm:ss'),
+				updatedAt : moment().format('YYYY-MM-DD HH:mm:ss')
+			}
+
+		    db.insert("projects",obj)
+		    .then (rows => {
+		      return resolve(rows[0]);
+		    })
+		    .catch(error => {
+		      return reject(error);
+		    });
+		});
+  	},
 
 	update : async (project, deviceId, topic, payload)=>{
 
@@ -64,7 +126,7 @@ var self = module.exports = {
 				  else
 				    obj[key] = JSON.stringify(parser.pathIntoObject(topic,data));
 
-				  let exists = await self.getDevice(project,deviceId);
+				  let exists = await self.getById(deviceId);
 
 				  if(!exists){
 				    obj['device_id'] = deviceId;
@@ -88,37 +150,38 @@ var self = module.exports = {
 
 				let key = topic;
 				if(db_columns.hasOwnProperty(key)){ // check if db has a column for this key
-				  // build object with respective data
-				  if(typeof data === "object")
-				    obj[key] = JSON.stringify(data);
-				  else
-				    obj[key] = data;
+					// build object with respective data
+					  if(typeof data === "object")
+					obj[key] = JSON.stringify(data);
+					else
+					obj[key] = data;
 
-				  let exists = await self.getDevice(project,deviceId);
-				  if(!exists){
-				    obj['device_id'] = deviceId;
-				    obj['createdAt'] = moment().format('YYYY-MM-DD HH:mm:ss');
-				    db.insert(project,obj)
-				    .then((rows)=>{
-				    	return resolve(rows);
-				    })
-				    .catch((err)=>{
-				    	console.log(err);
-				    	return resolve(null);
-				    })
-				  }else{
-				    let filter = {
-				      device_id : deviceId
-				    }
-				    db.update(project,obj,filter)
-				    .then((rows)=>{
-				    	return resolve(rows);
-				    })
-				    .catch((err)=>{
-				    	console.log(err);
-				    	return resolve(null);
-				    })
-				  }
+					let exists = await self.getById(deviceId);
+					if(!exists){
+						obj['device_id'] = deviceId;
+						obj['createdAt'] = moment().format('YYYY-MM-DD HH:mm:ss');
+						db.insert(project,obj)
+						.then((rows)=>{
+							return resolve(rows);
+						})
+						.catch((err)=>{
+							console.log(err);
+							return resolve(null);
+						})
+						}else{
+						let filter = {
+						  device_id : deviceId
+						}
+
+						db.update(project,obj,filter)
+						.then((rows)=>{
+							return resolve(rows);
+						})
+						.catch((err)=>{
+							console.log(err);
+							return resolve(null);
+						})
+					}
 				}else return resolve();
 			}
 		})
@@ -186,25 +249,4 @@ var self = module.exports = {
 	    return resolve();
 	},
 
-	getFwVersion : async(project,deviceId)=>{
-
-		return new Promise((resolve,reject) => {
-
-	    let query = "SELECT fw_version FROM ?? where device_id = ?";
-	    let table = [project,deviceId];
-	    query = mysql.format(query,table);
-
-	    db.queryRow(query)
-	    .then( rows => {
-	      if(rows.length > 0)
-	        return resolve(rows[0]);
-	      else
-	        return resolve(null);
-	    })
-	    .catch( err => {
-	      console.log(err);
-	      return resolve(null);
-	    });
-	  });
-	}
 }
