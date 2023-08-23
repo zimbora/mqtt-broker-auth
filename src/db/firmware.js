@@ -12,13 +12,13 @@ var self = module.exports = {
 		let table = [];
 
 		if(release == "stable"){
-			query = `SELECT fw_version,filename,token FROM firmwares where fwModel_id = ? and fw_release = ? ORDER BY CAST(SUBSTRING_INDEX(fw_version, '.', 1) AS UNSIGNED) DESC,
+			query = `SELECT fw_version,filename,token FROM firmwares where model_id = ? and fw_release = ? ORDER BY CAST(SUBSTRING_INDEX(fw_version, '.', 1) AS UNSIGNED) DESC,
 			 CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(fw_version, '.', 2), '.', -1) AS UNSIGNED) DESC,
 			 CAST(SUBSTRING_INDEX(fw_version, '.', -1) AS UNSIGNED) DESC
 			 LIMIT 1`;
 			table = [modelId,release];
 		}else{
-			query = `SELECT fw_version,filename,token FROM firmwares where fwModel_id = ? ORDER BY CAST(SUBSTRING_INDEX(fw_version, '.', 1) AS UNSIGNED) DESC,
+			query = `SELECT fw_version,filename,token FROM firmwares where model_id = ? ORDER BY CAST(SUBSTRING_INDEX(fw_version, '.', 1) AS UNSIGNED) DESC,
 			 CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(fw_version, '.', 2), '.', -1) AS UNSIGNED) DESC,
 			 CAST(SUBSTRING_INDEX(fw_version, '.', -1) AS UNSIGNED) DESC
 			 LIMIT 1`;
@@ -49,13 +49,13 @@ var self = module.exports = {
 		let table = [];
 
 		if(release == "stable"){
-			query = `SELECT app_version,filename,token FROM firmwares where fwModel_id = ? and fw_release = ? ORDER BY CAST(SUBSTRING_INDEX(app_version, '.', 1) AS UNSIGNED) DESC,
+			query = `SELECT app_version,filename,token FROM firmwares where model_id = ? and fw_release = ? ORDER BY CAST(SUBSTRING_INDEX(app_version, '.', 1) AS UNSIGNED) DESC,
 			 CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(app_version, '.', 2), '.', -1) AS UNSIGNED) DESC,
 			 CAST(SUBSTRING_INDEX(app_version, '.', -1) AS UNSIGNED) DESC
 			 LIMIT 1`;
 			table = [modelId,release];
 		}else{
-			query = `SELECT app_version,filename,token FROM firmwares where fwModel_id = ? ORDER BY CAST(SUBSTRING_INDEX(app_version, '.', 1) AS UNSIGNED) DESC,
+			query = `SELECT app_version,filename,token FROM firmwares where model_id = ? ORDER BY CAST(SUBSTRING_INDEX(app_version, '.', 1) AS UNSIGNED) DESC,
 			 CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(app_version, '.', 2), '.', -1) AS UNSIGNED) DESC,
 			 CAST(SUBSTRING_INDEX(app_version, '.', -1) AS UNSIGNED) DESC
 			 LIMIT 1`;

@@ -513,7 +513,7 @@ async function getLatestFwVersion(model,release){
   return new Promise( async (resolve,reject) => {
 
     let modelId = 0;
-    try{ modelId = await Model.getById(model)}
+    try{ modelId = await Model.getByName(model)}
     catch(err){ console.log(err);}
 
     if(modelId == null)
@@ -534,7 +534,7 @@ async function getLatestAppVersion(model,release){
   return new Promise( async (resolve,reject) => {
 
     let modelId = 0;
-    try{ modelId = await Model.getById(model)}
+    try{ modelId = await Model.getByName(model)}
     catch(err){ console.log(err);}
 
     if(modelId == null)

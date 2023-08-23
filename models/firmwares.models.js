@@ -7,7 +7,8 @@ module.exports = (sequelize,DataTypes)=>{
 		},
 		originalname: {
 			type: DataTypes.STRING,
-			allowNull: true
+			allowNull: true,
+			unique: true
 		},
 		fw_version: {
 			type: DataTypes.STRING,
@@ -21,12 +22,12 @@ module.exports = (sequelize,DataTypes)=>{
 			type: DataTypes.STRING,
 			allowNull: true
 		},
-		fwModel_id: {
+		model_id: { // deprecated
 			type: DataTypes.INTEGER,
 			references: {
-				model: 'fwModels',
+				model: 'models',
 				key: 'id'
-			}
+			},
 		},
 		token: {
 			type: DataTypes.STRING,

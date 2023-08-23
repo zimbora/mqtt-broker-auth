@@ -1,6 +1,6 @@
 
 module.exports = (sequelize,DataTypes)=>{
-	return sequelize.define("permissionsFW", {
+	return sequelize.define("modelPermissions", {
 		client_id: {
 			type: DataTypes.INTEGER,
 			references: {
@@ -8,16 +8,16 @@ module.exports = (sequelize,DataTypes)=>{
 				key: 'id'
 			}
 		},
-		fwModel_id: {
+		model_id: {
 			type: DataTypes.INTEGER,
 			references: {
-				model: 'fwModels',
+				model: 'models',
 				key: 'id'
 			}
 		}
 	},
 	{
-		tableName: 'permissionsFW',
+		tableName: 'modelPermissions',
 		freezeTableName: true
 	})
 }

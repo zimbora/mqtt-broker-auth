@@ -168,50 +168,6 @@ function startAedes(){
 
 }
 
-async function getFWConfig(project,uid,property,client){
-  return new Promise((resolve,reject)=>{
-    let topic = project+"/"+uid+"/fw/settings/"+property+"/get";
-    let payload = "";
-    let packet = {
-      topic : topic,
-      payload : payload
-    }
-    client.publish(packet,(err)=>{
-      if(err) return reject(err)
-      else return resolve();
-    })
-  })
-}
-
-async function getAppConfig(project,uid,property,client){
-  return new Promise((resolve,reject)=>{
-    let topic = project+"/"+uid+"/app/settings/"+property+"/get";
-    let payload = "";
-    let packet = {
-      topic : topic,
-      payload : payload
-    }
-    client.publish(packet,(err)=>{
-      if(err) return reject(err)
-      else return resolve();
-    })
-  })
-}
-
-async function getMD5File(project,uid,filename,client){
-  return new Promise((resolve,reject)=>{
-    let topic = project+"/"+uid+"/fw/"+filename+"/get";
-    let payload = "";
-    let packet = {
-      topic : topic,
-      payload : payload
-    }
-    client.publish(packet,(err)=>{
-      if(err) return reject(err)
-      else return resolve();
-    })
-  })
-}
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
