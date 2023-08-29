@@ -1,13 +1,8 @@
 module.exports = {
-  version : "1.0.3",
+  version : "1.1.4",
   dev : process.env.dev || "true",
   mq : process.env.MQ || "redis", // redis or mongo
   persistence : process.env.PERSISTENCE || "mongo", //"redis or mongo",
-  web:{
-    protocol : process.env.HTTP_PROTOCOL  || "http://",
-    domain: process.env.DOMAIN            || '192.168.1.101',
-    fw_path : '/api/firmware/'
-  },
   port:{
     mqtt : process.env.MQTT_PORT    || 1883,
     mqtts : process.env.MQTTS_PORT  || 8883,
@@ -29,38 +24,5 @@ module.exports = {
   mongodb: {
     url: process.env.MONGO_URL || 'mongodb://127.0.0.1/aedes-clusters',
     workers: process.env.WORKERS || 3
-  },
-  devices: {
-    "rtls-linux" : {},
-    "freeRTOS2" : {
-      project_table : "freeRTOS2",
-      logs_table : "logs_freeRTOS2",
-      models : {
-        "HH_GW_LTE":{
-          model_table : "HH",
-          logs_table : "logs_HH",
-        },
-        "HH_GW_WIFI":{
-          model_table : "HH",
-          logs_table : "logs_HH",
-        },
-        "MEA_GW_LTE":{
-          logs_table : "",
-        },
-        "MEA_GW_WIFI":{
-          logs_table : "",
-        },
-        "SLIM_GW_LTE":{
-          logs_table : "",
-        },
-        "SLIM_GW_WIFI":{
-          logs_table : "",
-        },
-
-      }
-    }
-  },
-  apps: {
-    "HH" : {},
   }
 }

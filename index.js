@@ -5,9 +5,8 @@ const { createServer } = require('net');
 const { cpus } = require('os')
 
 var config = require('./config');
-
 var auth = require('./src/auth/auth.js');
-var device = require('./src/device/device.js');
+//var device = require('./src/device/device.js');
 
 // websocket
 const httpServer = require('http').createServer()
@@ -48,7 +47,7 @@ function startAedes(){
   })
 
   auth.init();
-  device.init();
+  //device.init();
 
   // authenticate the connecting client
   aedes.authenticate = async (client, user_type, password, callback) => {
@@ -134,6 +133,7 @@ function startAedes(){
   // emitted when a client publishes a message packet on the topic
   aedes.on('publish', async function (packet, client) {
 
+    /*
     let topic = packet.topic;
     let payload = String(packet.payload);
 
@@ -144,6 +144,7 @@ function startAedes(){
       }
 
     }
+    */
   })
 
 
