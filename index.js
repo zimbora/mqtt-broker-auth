@@ -180,7 +180,7 @@ process.on('unhandledRejection', (reason, promise) => {
 if (cluster.isMaster) {
   console.log(config)
   //const numWorkers = cpus().length
-  const numWorkers = config.mongodb.workers
+  const numWorkers = config.workers
   for (let i = 0; i < numWorkers; i++) {
     cluster.fork()
   }

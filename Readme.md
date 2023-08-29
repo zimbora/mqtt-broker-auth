@@ -29,7 +29,12 @@ The exception is for WIFI ssid and password, topic :project/:uid/fw/settings/wif
 
 ## Dependencies
 
-- mysql8.0 running with the following [db](https://github.com/zimbora/mgmt-iot-web/blob/master/mysql/schema.mwb)
+- mysql8.0
+- mongodb
+- redis
+- [mqtt-devices-parser](https://github.com/zimbora/mgmt-iot-web/blob/master/mysql/schema.mwb)
+
+## Front end
 - Node service running the following [project](https://github.com/zimbora/mgmt-iot-web)
 
 ## Problems
@@ -87,22 +92,27 @@ services:
     restart: unless-stopped
     command: node index.js
     environment:
-      # web
-      #HTTP_PROTOCOL: 'http://'
-      DOMAIN: '192.168.1.108'
+      dev: true
+      mq: 'redis'
+      persistence: 'mongo'
       # MQTT && WebSocket
       MQTT_PORT: '1883'
       #MQTTS_PORT
       WS_PORT: '8888'
       #WSS_PORT
       # DataBase
-      DB_HOST: 'host.docker.internal'
-      #DB_PORT: '3306'
-      #DB_USER: 'user'
-      #DB_PWD: 'user_pwd'
-      #DB_NAME: 'mqtt-aedes'
-      WORKERS: 2
-      MONGO_URL: 'mongodb://host.docker.internal/aedes-clusters'
+      DB_CONN_LIMIT: 15
+      DB_HOST: 'db'
+      DB_PORT: '3306'
+      DB_USER: 'user'
+      DB_PWD: 'user_pwd'
+      DB_NAME: 'mqtt-aedes'
+      #CLUSTER
+      WORKERS: 3
+      # REDIS
+      REDIS_URL: 'mongodb://127.0.0.1/aedes-clusters'
+      # MONGO
+      MONGO_URL: 'mongodb://127.0.0.1/aedes-clusters'
     ports:
       - '1883:1883'
       - '8888:8888'
@@ -114,9 +124,10 @@ services:
       - .:/usr/app/mqtt/
       - /usr/app/mqtt/node_modules
     depends_on:
-      - mongodb
       - db
+      - mongodb
       - redis
+      - mqtt-devices-parser
 # Names our volume
 volumes:
   my-db:

@@ -23,6 +23,6 @@ module.exports = {
   },
   mongodb: {
     url: process.env.MONGO_URL || 'mongodb://127.0.0.1/aedes-clusters',
-    workers: process.env.WORKERS || 3
-  }
+  },
+  workers: process.env.WORKERS || 3
 }
