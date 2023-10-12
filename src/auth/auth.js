@@ -221,8 +221,8 @@ async function insertClient(nick,userId){
     let obj = {
       user_id : userId,
       nick : nick,
-      createdAt : moment().format('YYYY-MM-DD HH:mm:ss'),
-      updatedAt : moment().format('YYYY-MM-DD HH:mm:ss')
+      createdAt : moment().utc().format('YYYY-MM-DD HH:mm:ss'),
+      updatedAt : moment().utc().format('YYYY-MM-DD HH:mm:ss')
     }
 
     db.insert("clients",obj)
@@ -241,7 +241,7 @@ async function updateClient(nick,userId){
 
     let obj = {
       user_id : userId,
-      updatedAt : moment().format('YYYY-MM-DD HH:mm:ss')
+      updatedAt : moment().utc().format('YYYY-MM-DD HH:mm:ss')
     };
 
     let filter = {
@@ -287,8 +287,8 @@ async function addPermission(clientID,deviceID,level){
       client_id : clientId,
       device_id : clientID,
       level : level,
-      createdAt : moment().format('YYYY-MM-DD HH:mm:ss'),
-      updatedAt : moment().format('YYYY-MM-DD HH:mm:ss')
+      createdAt : moment().utc().format('YYYY-MM-DD HH:mm:ss'),
+      updatedAt : moment().utc().format('YYYY-MM-DD HH:mm:ss')
     }
 
     db.insert("permissions",obj)
@@ -307,7 +307,7 @@ async function updatePermission(clientID,deviceID,level){
 
     let obj = {
       level : level,
-      updatedAt : moment().format('YYYY-MM-DD HH:mm:ss')
+      updatedAt : moment().utc().format('YYYY-MM-DD HH:mm:ss')
     };
 
     let filter = {

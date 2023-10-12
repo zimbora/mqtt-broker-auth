@@ -23,10 +23,6 @@ This `uid:` identifies the device referred on the topic and is used to check if 
 If the `level` of `clientId` is >= 3 publish and subscribe on the respective topic are granted\
 If the `level` of `clientId` is >= 1 and < 3 only subscribe on the respective topic is granted
 
-### Devices configurations
-If a client writes on topics :project/:uid/fw/settings or :project/:uid/app/settings that data will be store in database. If this written is made by a device, the data will be only stored if there's no data in db. In the other hand, if the there is data in db and that data is different from the one that device sent, this service will try to update the device, keeping it synced.\
-The exception is for WIFI ssid and password, topic :project/:uid/fw/settings/wifi. The device has always control over this topic, yet it can accept changes when it is connected.
-
 ## Dependencies
 
 - mysql8.0
@@ -87,14 +83,14 @@ services:
     volumes:
       - my-db:/var/lib/mysql
   mqtt:
-    build: ./mqtt-broker-auth
-    image: mqtt:0.4.1
+    #build: ./mqtt-broker-auth
+    image: zimbora:mqtt-broker-auth
     restart: unless-stopped
     command: node index.js
     environment:
       dev: true
-      mq: 'redis'
-      persistence: 'mongo'
+      MQ: 'redis'
+      PERSISTENCE: 'mongo'
       # MQTT && WebSocket
       MQTT_PORT: '1883'
       #MQTTS_PORT

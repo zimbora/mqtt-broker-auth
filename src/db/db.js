@@ -46,6 +46,7 @@ var self = module.exports = {
     let pool2      =    mysql.createPool({
         connectionLimit : 100,
         host     : config.mysqldb.host,
+        port     : config.mysqldb.port,
         user     : config.mysqldb.user,
         password : config.mysqldb.pwd,
         database : db_name,
