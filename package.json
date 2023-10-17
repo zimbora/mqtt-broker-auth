@@ -1,6 +1,6 @@
 {
   "name": "mqtt_broker_auth",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -15,15 +15,11 @@
     "aedes-persistence-redis": "^9.0.2",
     "async": "^3.2.4",
     "cluster": "^0.7.7",
-    "lodash": "^4.17.21",
-    "md5": "^2.3.0",
     "moment": "^2.29.4",
     "mqemitter-mongodb": "^8.1.0",
     "mqemitter-redis": "^5.0.0",
     "mysql2": "^3.2.0",
     "net": "^1.0.2",
-    "semver": "^7.3.8",
-    "sequelize": "^6.32.1",
     "websocket-stream": "^5.5.2"
   }
 }
