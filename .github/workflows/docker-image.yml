@@ -65,7 +65,7 @@ jobs:
           docker push zimbora/mqtt-broker-auth:dev
 
         elif [[ "$GITHUB_EVENT_NAME" == "create" && "$GITHUB_REF" == refs/tags/* ]]; then
-          docker tag mqtt-broker-auth:prod zimbora/mqtt-broker-auth:stage:${{ env.VERSION }}
+          docker tag mqtt-broker-auth:prod zimbora/mqtt-broker-auth:stage-${{ env.VERSION }}
           docker push zimbora/mqtt-broker-auth:stage:${{ env.VERSION }}
 
         elif [[ "$GITHUB_EVENT_NAME" == "release" ]]; then
