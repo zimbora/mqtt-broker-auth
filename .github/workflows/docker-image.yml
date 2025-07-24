@@ -24,9 +24,26 @@ jobs:
     - name: Get the version
       id: get_version
       run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-      
+    
+    - name: Determine build target
+      id: set_target
+      run: |
+        if [[ "${{ github.event_name }}" == "push" ]]; then
+          echo "BUILD_TARGET=dev" >> $GITHUB_ENV
+        elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          echo "BUILD_TARGET=dev" >> $GITHUB_ENV
+        elif [[ "${{ github.event_name }}" == "create" ]]; then
+          # When a tag is created, build as prod
+          echo "BUILD_TARGET=prod" >> $GITHUB_ENV
+        elif [[ "${{ github.event_name }}" == "release" ]]; then
+          echo "BUILD_TARGET=prod" >> $GITHUB_ENV
+        else
+          # Default to dev if unsure
+          echo "BUILD_TARGET=dev" >> $GITHUB_ENV
+        fi
+
     - name: Build Docker image
-      run: docker buildx build --platform linux/amd64 -t mqtt-broker-auth .
+      run: docker buildx build --platform linux/amd64 --target $BUILD_TARGET -t mqtt-broker-auth:$BUILD_TARGET .
 
     - name: Login to DockerHub
       uses: docker/login-action@v3
@@ -40,20 +57,20 @@ jobs:
         echo "Ref: $GITHUB_REF"
 
         if [[ "$GITHUB_EVENT_NAME" == "push" && "$GITHUB_REF" == "refs/heads/main" ]]; then
-          docker tag mqtt-broker-auth:latest zimbora/mqtt-broker-auth:dev
+          docker tag mqtt-broker-auth:dev zimbora/mqtt-broker-auth:dev
           docker push zimbora/mqtt-broker-auth:dev
 
         elif [[ "$GITHUB_EVENT_NAME" == "pull_request" && "$GITHUB_REF" == "refs/heads/main" ]]; then
-          docker tag mqtt-broker-auth:latest zimbora/mqtt-broker-auth:dev
+          docker tag mqtt-broker-auth:dev zimbora/mqtt-broker-auth:dev
           docker push zimbora/mqtt-broker-auth:dev
 
         elif [[ "$GITHUB_EVENT_NAME" == "create" && "$GITHUB_REF" == refs/tags/* ]]; then
-          docker tag mqtt-broker-auth:latest zimbora/mqtt-broker-auth:stage
-          docker push zimbora/mqtt-broker-auth:stage
+          docker tag mqtt-broker-auth:prod zimbora/mqtt-broker-auth:stage:${{ env.VERSION }}
+          docker push zimbora/mqtt-broker-auth:stage:${{ env.VERSION }}
 
         elif [[ "$GITHUB_EVENT_NAME" == "release" ]]; then
-          docker tag mqtt-broker-auth:latest zimbora/mqtt-broker-auth:latest
-          docker tag mqtt-broker-auth:latest zimbora/mqtt-broker-auth:${{ env.VERSION }}
+          docker tag mqtt-broker-auth:prod zimbora/mqtt-broker-auth:latest
+          docker tag mqtt-broker-auth:prod zimbora/mqtt-broker-auth:${{ env.VERSION }}
           docker push zimbora/mqtt-broker-auth:latest
           docker push zimbora/mqtt-broker-auth:${{ env.VERSION }}
 
