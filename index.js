@@ -63,9 +63,40 @@ function startAedes(){
 
     let authorized = await auth.checkUser(user_type,password);
     if(authorized){
-      console.log(`client ${client.id} authorized`);
-      await auth.addClient(client.id,user_type,password);
-      return callback(null, true);
+
+      if(user_type == 'device'){
+        // password can be used here to validate device
+
+        // check if device is registered
+        const registeredDevice = await auth.checkDevice(client.id);
+        if(registeredDevice){
+          console.log(`device ${client.id} authorized`);
+          return callback(null, true);
+        }else{
+          console.log(`device ${client.id} not registered`);
+          return callback(null, true);
+        }
+      }
+
+      if(user_type == 'client'){
+        // password can be used here to validate client
+
+        // check if client is registered
+        const registeredClient = await auth.checkClient(client.id);
+        if(registeredClient){
+          console.log(`client ${client.id} authorized`);
+          return callback(null, true);
+        }else{
+          console.log(`client ${client.id} not registered`);
+          return callback(null, true);
+        }
+      }
+
+      if(authorized.level >= 4){
+        // user is always authorized to access mqtt broker
+        return callback(null, true);
+      }
+
     }else{
       console.log('Error ! Authentication failed.')
       const error = new Error('Authentication Failed!! Invalid user credentials: '+user_type+'@'+password);
@@ -76,7 +107,11 @@ function startAedes(){
   // authorizing client to subscribe on a message topic
   aedes.authorizeSubscribe = async (client, sub, callback) => {
 
-    let authorized = await auth.checkSubscribeAuthorization(client.id,sub.topic)
+    const clientId = client.id;
+    const user = client?._parser?.settings?.username;
+    const pwd = client?._parser?.settings?.password?.toString();
+    
+    let authorized = await auth.checkSubscribeAuthorization(clientId,user,pwd,sub.topic)
     if(authorized){
       return callback(null,sub);
     }else{
@@ -91,15 +126,21 @@ function startAedes(){
       return callback(new Error("$SYS" + ' topic is reserved'))
     }
 
-    if(client && client.hasOwnProperty("id")){
-      let authorized = await auth.checkPublishAuthorization(client.id,packet.topic)
-      if(authorized){
-        return callback(null);
-      }else{
-        console.log(`${client.id} not authorized to publish on topic: ${packet.topic}`);
-        //sreturn callback(new Error('You are not authorized to publish on this message topic.'));
-      }
+    const clientId = client?.id;
+    const user = client?._parser?.settings?.username;
+    const pwd = client?._parser?.settings?.password?.toString();
+
+    if(!clientId || !user || !pwd)
+      return;
+
+    let authorized = await auth.checkPublishAuthorization(clientId,user,pwd,packet.topic)
+    if(authorized){
+      return callback(null);
+    }else{
+      console.log(`${client.id} not authorized to publish on topic: ${packet.topic}`);
+      //sreturn callback(new Error('You are not authorized to publish on this message topic.'));
     }
+    
   }
 
   // emitted when a client connects to the broker

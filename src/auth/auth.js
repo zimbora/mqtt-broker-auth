@@ -29,6 +29,14 @@ var self = module.exports = {
     return client;
   },
 
+  checkDevice : async function(uid){
+
+    try{ device = await getDevice(uid)}
+    catch(err){ console.log(err); return null;}
+
+    return device;
+  },
+
   addClient : async function(nick,user_type,pwd){
 
     let user = await getUser(user_type,pwd);
@@ -55,79 +63,106 @@ var self = module.exports = {
     }
   },
 
-  checkPublishAuthorization : async function(nick, topic){
+  checkPublishAuthorization : async function(nick, username, pwd, topic){
 
-    if(topic.includes(nick)) // if client is writting on own topic return true
-      return true;
+    // :project/:uid/
+    const topicObj = parseMqttTopic(topic);
+    const user = await getUserLevel(username);
+    if(!user?.level) return false;
 
-    let res = null;
-    try{ res = await getAssociatedUserByNick(nick)}
-    catch(err){ console.log(err);}
-
-    let clientID;
-    if(res != null){
-       clientID = res.client_id;
-      if(res.level >= 4) // if client is admin allow everything
+    switch(user.level){
+      case 5:
         return true;
+        break;
+      case 4:
+        try{
+          const client = await getClient(nick);
+          const project = await getProject(topicObj?.project);
+          return await clientHasAccessToProject(client.id,project.id);
+        }catch(err){
+          console.log(err);
+          return false;
+        }
+        break;
     }
 
-    // check if client is authorized to publish on topic
-    if(topic.includes("uid:")){
-      let index = topic.indexOf("uid:")
-      let uid = topic.substr(index);
-      index = uid.indexOf("/");
-      uid = uid.substr(0,index);
-
-      try{ level = await getPermission(clientID,uid)}
-      catch(err){ console.log(err);}
-
-      if(level != null && level >= 3)
-        return true;
-
-      return false;
-    }else{
-      return true;
+    if(username == 'device'){
+      const project = await getProject(topicObj?.project);
+      const uid = topicObj?.uid;
+      if( project && uid && uid.startsWith(project?.uidPrefix) && uid.length == project?.uidLength){ // not necessary here - only in publish mode
+        const device = await getDevice(topicObj?.uid);
+        if(device) return true; // device is subscribing to own topic  
+        else return false; 
+      }else{
+        return false; // device is not subscribing to project that is assigned
+      } 
+    }
+    else if(username == 'client'){
+      try{ 
+        const client = await getClient(nick);
+        level = await getPermission(client.client_id,topicObj?.uid)
+        if(level != null && level > 1)
+          return true;
+        else
+          return false;
+      }catch(err){ 
+        console.log(err);
+        return false;
+      } 
     }
 
+    return false; // no condition was met
   },
 
-  checkSubscribeAuthorization : async function(nick, topic){
+  checkSubscribeAuthorization : async function(nick, username, pwd, topic){
 
-    if(topic.includes(nick)) // if client is writting on own topic return true
-      return true;
+    // :project/:uid/
+    const topicObj = parseMqttTopic(topic);
+    const user = await getUserLevel(username);
+    if(!user?.level) return false;
 
-    try{ user = await getAssociatedUserByNick(nick)}
-    catch(err){ console.log(err);}
-
-    let clientID;
-    if(user != null){
-      //clientID = user[0].user_id;
-      if(user.level >= 4) // if client is admin allow everything
+    switch(user.level){
+      case 5:
         return true;
+        break;
+      case 4:
+        try{
+          const client = await getClient(nick);
+          const project = await getProject(topicObj?.project);
+          return await clientHasAccessToProject(client.id,project.id);
+        }catch(err){
+          console.log(err);
+          return false;
+        }
+        break;
     }
 
-    // check if client is authorized to subscribe on topic
-    // Clients are only authorized to subscribe on devices topics, unless they have high level permissions
-    if(!topic.includes("uid:"))
-      return false;
-
-    let index = topic.indexOf("uid:")
-    if(index > -1){
-      let uid = topic.substr(index);
-      index = uid.indexOf("/");
-      uid = uid.substr(0,index);
-
-      try{ level = await getPermission(user.client_id,uid)}
-      catch(err){ console.log(err);}
-
-      if(level != null && level >= 1)
-        return true;
-
-      return false;
+    if(username == 'device'){
+      const project = await getProject(topicObj?.project);
+      const uid = topicObj?.uid;
+      if( project && uid && uid.startsWith(project?.uidPrefix) && uid.length == project?.uidLength){ // not necessary here - only in publish mode
+        const device = await getDevice(topicObj?.uid);
+        if(device) return true; // device is subscribing to own topic  
+        else return false; 
+      }else{
+        return false; // device is not subscribing to project that is assigned
+      } 
     }
-    else{
-      return true;
+    else if(username == 'client'){
+      try{ 
+        const client = await getClient(nick);
+        level = await getPermission(client.client_id,topicObj?.uid)
+        if(level != null && level > 0)
+          return true;
+        else
+          return false;
+      }catch(err){ 
+        console.log(err);
+        return false;
+      } 
     }
+
+    return false; // no condition was met
   },
 
 };
@@ -139,6 +174,47 @@ async function getUser(user,pwd){
 
     let query = "SELECT level,id FROM ?? where type = ? and password = ?";
     let table = ["users",user,pwd];
+    query = mysql.format(query,table);
+
+    db.queryRow(query)
+    .then( rows => {
+      if(rows.length > 0)
+        return resolve(rows[0]);
+      else return resolve(null);
+    })
+    .catch( error => {
+      return reject(error);
+    })
+  });
+}
+
+async function getUserLevel(user){
+
+  return new Promise((resolve,reject) => {
+
+    let query = "SELECT level FROM ?? where type = ?";
+    let table = ["users",user];
+    query = mysql.format(query,table);
+
+    db.queryRow(query)
+    .then( rows => {
+      if(rows.length > 0)
+        return resolve(rows[0]);
+      else return resolve(null);
+    })
+    .catch( error => {
+      return reject(error);
+    })
+  });
+}
+
+// projects
+async function getProject(projectName){
+
+  return new Promise((resolve,reject) => {
+
+    let query = "SELECT id,uidPrefix,uidLength FROM projects where name = ?";
+    let table = [projectName];
     query = mysql.format(query,table);
 
     db.queryRow(query)
@@ -198,7 +274,7 @@ async function getClient(nick){
 
   return new Promise((resolve,reject) => {
 
-    let query = "SELECT id as client_id,user_id,gmail,name,avatar FROM clients where nick = ?";
+    let query = "SELECT id as client_id,user_id,gmail,name FROM clients where nick = ?";
     let table = [nick];
     query = mysql.format(query,table);
 
@@ -258,12 +334,52 @@ async function updateClient(nick,userId){
   });
 }
 
+async function getDevice(uid){
+
+  return new Promise((resolve,reject) => {
+
+    let query = "SELECT id,uid,psk FROM devices where uid = ?";
+    let table = [uid];
+    query = mysql.format(query,table);
+
+    db.queryRow(query)
+    .then( rows => {
+      if(rows.length > 0)
+        return resolve(rows[0]);
+      else return resolve(null);
+    })
+    .catch( error => {
+      return reject(error);
+    })
+  });
+}
+
 // mqtt permissions
+async function clientHasAccessToProject(clientId,projectId){
+
+  return new Promise((resolve,reject) => {
+
+    let query = "SELECT * FROM projectPermissions where clientId = ? and project_id = ?";
+    let table = [clientId,projectId];
+    query = mysql.format(query,table);
+
+    db.queryRow(query)
+    .then( rows => {
+      if(rows.length > 0)
+        return resolve(true);
+      else return resolve(false);
+    })
+    .catch( error => {
+      return reject(error);
+    })
+  });
+}
+
 async function getPermission(clientID,deviceID){
 
   return new Promise((resolve,reject) => {
 
-    let query = "SELECT level FROM permissions as p inner join devices as d where d.id = p.device_id and p.client_id =  ? and d.uid = ?";
+    let query = "SELECT level FROM permissions as p inner join devices as d where d.id = p.device_id and p.client_id = ? and d.uid = ?";
     let table = [clientID,deviceID];
     query = mysql.format(query,table);
 
@@ -323,4 +439,18 @@ async function updatePermission(clientID,deviceID,level){
       return reject(error);
     })
   });
+}
+
+// utils
+function parseMqttTopic(topic) {
+  // Split the topic into parts based on '/'
+  const parts = topic.split('/');
+
+  // Optional: You can return an object with parts
+  return {
+    hierarchy: parts,
+    // Example: access specific parts:
+    project: parts[0],
+    uid: parts[1],
+  };
 }
