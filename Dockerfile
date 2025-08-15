@@ -12,6 +12,12 @@ COPY . .
 # Optional: Add dev-specific tools or configurations here
 CMD ["sh", "-c", "node index.js"]  # or your dev command
 
+# --- Staging stage ---
+FROM base AS stage
+RUN npm ci --only=production
+COPY . .
+CMD ["node", "index.js"]
+
 # --- Production stage ---
 FROM base AS prod
 RUN npm ci --only=production

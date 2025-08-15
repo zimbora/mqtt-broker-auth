@@ -33,8 +33,8 @@ jobs:
         elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
           echo "BUILD_TARGET=dev" >> $GITHUB_ENV
         elif [[ "${{ github.event_name }}" == "create" ]]; then
-          # When a tag is created, build as prod
-          echo "BUILD_TARGET=prod" >> $GITHUB_ENV
+          # When a tag is created, build as stage
+          echo "BUILD_TARGET=stage" >> $GITHUB_ENV
         elif [[ "${{ github.event_name }}" == "release" ]]; then
           echo "BUILD_TARGET=prod" >> $GITHUB_ENV
         else
@@ -65,8 +65,8 @@ jobs:
           docker push zimbora/mqtt-broker-auth:dev
 
         elif [[ "$GITHUB_EVENT_NAME" == "create" && "$GITHUB_REF" == refs/tags/* ]]; then
-          docker tag mqtt-broker-auth:prod zimbora/mqtt-broker-auth:stage-${{ env.VERSION }}
-          docker push zimbora/mqtt-broker-auth:stage-${{ env.VERSION }}
+          docker tag mqtt-broker-auth:stage zimbora/mqtt-broker-auth:stage
+          docker push zimbora/mqtt-broker-auth:stage
 
         elif [[ "$GITHUB_EVENT_NAME" == "release" ]]; then
           docker tag mqtt-broker-auth:prod zimbora/mqtt-broker-auth:latest
