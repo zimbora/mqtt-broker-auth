@@ -6,6 +6,7 @@ const { cpus } = require('os')
 
 var config = require('./config');
 var auth = require('./src/auth/auth.js');
+var kafka = require('./src/kafka/kafka.js');
 //var device = require('./src/device/device.js');
 
 // websocket
@@ -46,8 +47,14 @@ function startAedes(){
     persistence
   })
 
-  auth.init();
-  //device.init();
+  // Initialize services
+  const initServices = async () => {
+    auth.init();
+    await kafka.init();
+    //device.init();
+  };
+
+  initServices().catch(console.error);
 
   // authenticate the connecting client
   aedes.authenticate = async (client, user_type, password, callback) => {
@@ -174,6 +181,24 @@ function startAedes(){
   // emitted when a client publishes a message packet on the topic
   aedes.on('publish', async function (packet, client) {
 
+    // Skip system topics from being published to Kafka
+    if (packet.topic.startsWith('$SYS/')) {
+      return;
+    }
+
+    try {
+      // Prepare client information for Kafka message
+      const clientInfo = client ? {
+        id: client.id,
+        username: client._parser?.settings?.username || null,
+      } : null;
+
+      // Publish to Kafka
+      await kafka.publishMessage(packet, clientInfo);
+    } catch (error) {
+      console.error(`[MQTT_PUBLISH] Error publishing to Kafka for topic '${packet.topic}':`, error.message);
+    }
+
     /*
     let topic = packet.topic;
     let payload = String(packet.payload);
@@ -216,6 +241,19 @@ process.on('unhandledRejection', (reason, promise) => {
   // exit with failure code
   if(config.dev)
     process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  await kafka.disconnect();
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  console.log('SIGINT received, shutting down gracefully');
+  await kafka.disconnect();
+  process.exit(0);
 });
 
 if (cluster.isMaster) {

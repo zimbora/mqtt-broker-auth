@@ -15,6 +15,7 @@
     "aedes-persistence-redis": "^9.0.2",
     "async": "^3.2.4",
     "cluster": "^0.7.7",
+    "kafkajs": "^2.2.4",
     "moment": "^2.29.4",
     "mqemitter-mongodb": "^8.1.0",
     "mqemitter-redis": "^5.1.0",
