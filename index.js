@@ -50,7 +50,7 @@ function startAedes(){
   // Initialize services
   const initServices = async () => {
     auth.init();
-    await kafka.init();
+    await kafka.init(cluster.worker.id);
     //device.init();
   };
 
