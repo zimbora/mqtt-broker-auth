@@ -27,12 +27,24 @@ class KafkaService {
         },
       });
 
+      // Add SASL/SSL auth if enabled
+      if (config.kafka.auth && config.kafka.auth.enabled) {
+        kafkaConfig.ssl = !!config.kafka.auth.ssl;
+        kafkaConfig.sasl = {
+          mechanism: config.kafka.auth.mechanism, // 'plain', 'scram-sha-256', etc.
+          username: config.kafka.auth.username,
+          password: config.kafka.auth.password,
+        };
+      }
+
       this.producer = this.kafka.producer();
       await this.producer.connect();
       this.isConnected = true;
       console.log('[KAFKA] Producer connected successfully to brokers:', config.kafka.brokers);
 
-      this.createTopicWithRetention(config.kafka.topic,604800000); // 7 days
+      for (const topic of config.kafka.topics) {
+        await this.createTopicWithRetention(topic, 2*60*60*1000); // 2 hours
+      }
 
     } catch (error) {
       console.error('[KAFKA] Failed to connect producer:', error.message);
@@ -82,6 +94,22 @@ class KafkaService {
       return;
     }
 
+    if(mqttPacket.dup){
+      // the message is duplicate, ignore it for now
+      return;
+    }
+
+    // Extract the first word (before "/") and the rest as key
+    const topicParts = mqttPacket.topic.split('/');
+    const kafkaTopic = topicParts[0];
+    const kafkaKey = mqttPacket.topic.slice(kafkaTopic.length + 1); // Everything after first "/"
+
+    // Check if kafkaTopic is included in config.kafka.topics
+    if (!config.kafka.topics.includes(kafkaTopic) || kafkaKey === '') {
+      // Not a valid topic, do not publish
+      return;
+    }
+
     try {
       const messagePayload = {
         timestamp: new Date().toISOString(),
@@ -99,9 +127,9 @@ class KafkaService {
       };
 
       await this.producer.send({
-        topic: config.kafka.topic,
+        topic: kafkaTopic,
         messages: [{
-          key: mqttPacket.topic, // Use MQTT topic as Kafka message key for partitioning
+          key: kafkaKey, // Use MQTT topic as Kafka message key for partitioning
           value: JSON.stringify(messagePayload),
         }],
       });

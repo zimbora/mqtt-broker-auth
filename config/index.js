@@ -25,10 +25,17 @@ module.exports = {
     url: process.env.MONGO_URL || 'mongodb://127.0.0.1/aedes-clusters',
   },
   kafka: {
-    brokers: process.env.KAFKA_BROKERS ? process.env.KAFKA_BROKERS.split(',') : ['localhost:9092'],
+    brokers: process.env.KAFKA_BROKERS ? process.env.KAFKA_BROKERS.split(',') : ['localhost:29093'],
     clientId: process.env.KAFKA_CLIENT_ID || 'mqtt-broker-auth',
-    topic: process.env.KAFKA_TOPIC || 'mqtt-messages',
-    enabled: process.env.KAFKA_ENABLED === 'true' || false,
+    topics: process.env.KAFKA_TOPICS ? process.env.KAFKA_TOPICS.split(',') : ['freeRTOS2', 'lwm2m'],
+    enabled: process.env.KAFKA_ENABLED === 'true' || true,
+    auth: {
+      enabled: process.env.KAFKA_AUTH_ENABLED === 'true' || false,
+      mechanism: 'scram-sha-256', // or 'scram-sha-256', 'scram-sha-512', etc.
+      username: process.env.KAFKA_AUTH_USER,
+      password: process.env.KAFKA_AUTH_PWD,
+      ssl: false // set to true if your Kafka requires SSL
+    }
   },
   workers: process.env.WORKERS || 3
 }
