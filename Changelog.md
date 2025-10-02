@@ -1,5 +1,9 @@
 # Changelog
 
+# 1.0.4
+	Supports kafka
+		If enabled, published mqtt messages started with topics defined in KAFKA_TOPICS will be dispatched to kafka
+
 # 1.0.3
 	new features (Authorization, subscribe and publish):
 	 - on auth: checks if device is registered
