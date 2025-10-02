@@ -18,7 +18,7 @@ class KafkaService {
     try {
       this.kafka = new Kafka({
         clientId: `${config.kafka.clientId}:${workerId}`,
-        brokers: ['localhost:29093'],
+        brokers: config.kafka.brokers,
         retry: {
             retries: 5, // Number of retries
             initialRetryTime: 500, // Initial wait time (ms)
