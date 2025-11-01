@@ -25,9 +25,9 @@ module.exports = {
     url: process.env.MONGO_URL || 'mongodb://127.0.0.1/aedes-clusters',
   },
   kafka: {
-    brokers: (process.env.KAFKA_BROKERS || 'localhost:29093').split(','),
+    brokers: (process.env.KAFKA_BROKERS || 'localhost:29092').split(','),
     clientId: process.env.KAFKA_CLIENT_ID || 'mqtt-broker-auth',
-    topics: (process.env.KAFKA_TOPICS || 'freeRTOS2,lwm2m').split(','),
+    topics: (process.env.KAFKA_TOPICS || 'inlocMsgsSniffed,freeRTOS2,lwm2m').split(','),
     enabled: process.env.KAFKA_ENABLED === 'true' || true,
     auth: {
       enabled: process.env.KAFKA_AUTH_ENABLED === 'true' || false,

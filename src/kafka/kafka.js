@@ -43,7 +43,10 @@ class KafkaService {
       console.log('[KAFKA] Producer connected successfully to brokers:', config.kafka.brokers);
 
       for (const topic of config.kafka.topics) {
-        await this.createTopicWithRetention(topic, 2*60*60*1000); // 2 hours
+        if(topic === 'inlocMsgsSniffed')
+          await this.createTopicWithRetention(topic, 2*60*1000); // 2 minutes
+        else
+          await this.createTopicWithRetention(topic, 2*60*60*1000); // 2 hours
       }
 
     } catch (error) {
@@ -101,8 +104,12 @@ class KafkaService {
 
     // Extract the first word (before "/") and the rest as key
     const topicParts = mqttPacket.topic.split('/');
-    const kafkaTopic = topicParts[0];
+    let kafkaTopic = topicParts[0];
     const kafkaKey = mqttPacket.topic.slice(kafkaTopic.length + 1); // Everything after first "/"
+
+    if(kafkaTopic === "freeRTOS2" && topicParts[2] === "packets"){
+      kafkaTopic = "inlocMsgsSniffed";
+    }
 
     // Check if kafkaTopic is included in config.kafka.topics
     if (!config.kafka.topics.includes(kafkaTopic) || kafkaKey === '') {
