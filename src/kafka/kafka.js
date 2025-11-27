@@ -20,7 +20,7 @@ class KafkaService {
         clientId: `${config.kafka.clientId}:${workerId}`,
         brokers: config.kafka.brokers,
         retry: {
-            retries: 5, // Number of retries
+            retries: 10000, // Number of retries
             initialRetryTime: 500, // Initial wait time (ms)
             maxRetryTime: 30000, // Maximum retry time (ms)
             factor: Math.floor(Math.random() * 5) + 1, // Exponential backoff factor
