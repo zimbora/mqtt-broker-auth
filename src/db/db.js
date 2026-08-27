@@ -92,7 +92,7 @@ var self = module.exports = {
           const keys = Object.keys(data);
           values = Object.values(data);
           const placeholders = values.map(() => '?').join(', ');
-          query = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`;
+          query = `INSERT INTO ${mysql.escapeId(table)} (${keys.map(k => mysql.escapeId(k)).join(', ')}) VALUES (${placeholders})`;
         }else{
           return reject("data passed is not an object");
         }
@@ -120,7 +120,7 @@ var self = module.exports = {
         if (typeof data === "object") {
           const keys = Object.keys(data);
           values = Object.values(data);
-          query = `UPDATE ${table} SET ${keys.map(key => `${key} = ?`).join(', ')}`;
+          query = `UPDATE ${mysql.escapeId(table)} SET ${keys.map(key => `${mysql.escapeId(key)} = ?`).join(', ')}`;
         } else {
           return reject("data passed is not an object");
         }
@@ -128,7 +128,7 @@ var self = module.exports = {
         if (typeof filter === "object") {
           const filterKeys = Object.keys(filter);
           const filterValues = Object.values(filter);
-          query += ` WHERE ${filterKeys.map(key => `${key} = ?`).join(' AND ')}`;
+          query += ` WHERE ${filterKeys.map(key => `${mysql.escapeId(key)} = ?`).join(' AND ')}`;
           values.push(...filterValues);
         } else {
           return reject("filter passed is not an object");
@@ -156,9 +156,14 @@ var self = module.exports = {
 
         if (typeof data === "object") {
           const keys = Object.keys(data);
-          query = `UPDATE ${table} SET ${column} = `;
+          const escapedTable = mysql.escapeId(table);
+          const escapedColumn = mysql.escapeId(column);
+          query = `UPDATE ${escapedTable} SET ${escapedColumn} = `;
           keys.forEach((key, index) => {
-            query += `JSON_SET(${column}, '$.${key}', ?)`;
+            if (!/^[a-zA-Z0-9_]+$/.test(key)) {
+              throw new Error(`Invalid JSON key: ${key}`);
+            }
+            query += `JSON_SET(${escapedColumn}, '$.${key}', ?)`;
             values.push(data[key]);
             if (index !== keys.length - 1) {
               query += ', ';
@@ -171,7 +176,7 @@ var self = module.exports = {
         if (typeof filter === "object") {
           const filterKeys = Object.keys(filter);
           const filterValues = Object.values(filter);
-          query += ` WHERE ${filterKeys.map(key => `${key} = ?`).join(' AND ')}`;
+          query += ` WHERE ${filterKeys.map(key => `${mysql.escapeId(key)} = ?`).join(' AND ')}`;
           values.push(...filterValues);
         } else {
           return reject("filter passed is not an object");
@@ -198,11 +203,11 @@ var self = module.exports = {
         let query = "";
         if(typeof filter === "object"){
           let values = [];
-          query = `DELETE FROM ${table} WHERE `;
+          query = `DELETE FROM ${mysql.escapeId(table)} WHERE `;
           for (let key in filter){
             if(values.length > 0)
               query += " AND ";
-            query += key + " = ?"
+            query += mysql.escapeId(key) + " = ?"
             values.push(filter[key]);
           }
           query = mysql.format(query,values);
@@ -230,7 +235,7 @@ var self = module.exports = {
         let args = [field,table,deviceId];
         query = mysql.format(query,args);
         conn.query(query,function(err,rows){
-          db.close_db_connection(conn);
+          self.close_db_connection(conn);
           if(err) return reject(err)
           else{
             if(rows.length == 1 ){
@@ -254,7 +259,7 @@ var self = module.exports = {
 
         query = mysql.format(query,args);
         conn.query(query,function(err,rows){
-          db.close_db_connection(conn);
+          self.close_db_connection(conn);
           if(err) return reject(err)
           else{
             if(rows.length == 1 && rows[0]?.field && rows[0][field]?.key){

@@ -81,7 +81,7 @@ function startAedes(){
           return callback(null, true);
         }else{
           console.log(`device ${client.id} not registered`);
-          return callback(null, true);
+          return callback(null, false);
         }
       }
 
@@ -95,7 +95,7 @@ function startAedes(){
           return callback(null, true);
         }else{
           console.log(`client ${client.id} not registered`);
-          return callback(null, true);
+          return callback(null, false);
         }
       }
 
@@ -106,7 +106,7 @@ function startAedes(){
 
     }else{
       console.log('Error ! Authentication failed.')
-      const error = new Error('Authentication Failed!! Invalid user credentials: '+user_type+'@'+password);
+      const error = new Error('Authentication Failed!! Invalid user credentials.');
       return callback(error, false);
     }
   }
@@ -138,14 +138,14 @@ function startAedes(){
     const pwd = client?._parser?.settings?.password?.toString();
 
     if(!clientId || !user || !pwd)
-      return;
+      return callback(new Error('You are not authorized to publish on this message topic.'));
 
     let authorized = await auth.checkPublishAuthorization(clientId,user,pwd,packet.topic)
     if(authorized){
       return callback(null);
     }else{
       console.log(`${client.id} not authorized to publish on topic: ${packet.topic}`);
-      //sreturn callback(new Error('You are not authorized to publish on this message topic.'));
+      return callback(new Error('You are not authorized to publish on this message topic.'));
     }
     
   }
