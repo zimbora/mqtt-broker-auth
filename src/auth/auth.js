@@ -23,6 +23,7 @@ var self = module.exports = {
 
   checkClient : async function(nick){
 
+    let client;
     try{ client = await getClient(nick)}
     catch(err){ console.log(err); return null;}
 
@@ -31,6 +32,7 @@ var self = module.exports = {
 
   checkDevice : async function(uid){
 
+    let device;
     try{ device = await getDevice(uid)}
     catch(err){ console.log(err); return null;}
 
@@ -44,7 +46,7 @@ var self = module.exports = {
 
     if(!client){
       try{
-        res = await insertClient(nick,user.id)
+        let res = await insertClient(nick,user.id)
         return;
       }
       catch(err){
@@ -53,7 +55,7 @@ var self = module.exports = {
       }
     }else{
       try{
-        res = await updateClient(nick,user.id)
+        let res = await updateClient(nick,user.id)
         return;
       }
       catch(err){
@@ -100,7 +102,7 @@ var self = module.exports = {
     else if(username == 'client'){
       try{ 
         const client = await getClient(nick);
-        level = await getPermission(client.client_id,topicObj?.uid)
+        const level = await getPermission(client.client_id,topicObj?.uid)
         if(level != null && level > 1)
           return true;
         else
@@ -151,7 +153,7 @@ var self = module.exports = {
     else if(username == 'client'){
       try{ 
         const client = await getClient(nick);
-        level = await getPermission(client.client_id,topicObj?.uid)
+        const level = await getPermission(client.client_id,topicObj?.uid)
         if(level != null && level > 0)
           return true;
         else
@@ -243,7 +245,7 @@ async function getAssociatedUserByNick(nick){
       if(rows.length > 0)
         return resolve(rows[0]);
       else
-        return null;
+        return resolve(null);
     })
     .catch( error => {
       return reject(error);
@@ -387,7 +389,7 @@ async function getPermission(clientID,deviceID){
     .then( rows => {
       if(rows.length > 0)
         return resolve(rows[0]?.level);
-      else return null;
+      else return resolve(null);
     })
     .catch( error => {
       return reject(error);
@@ -400,8 +402,8 @@ async function addPermission(clientID,deviceID,level){
   return new Promise((resolve,reject) => {
 
     let obj = {
-      client_id : clientId,
-      device_id : clientID,
+      client_id : clientID,
+      device_id : deviceID,
       level : level,
       createdAt : moment().utc().format('YYYY-MM-DD HH:mm:ss'),
       updatedAt : moment().utc().format('YYYY-MM-DD HH:mm:ss')
@@ -427,8 +429,8 @@ async function updatePermission(clientID,deviceID,level){
     };
 
     let filter = {
-      client_id : clientId,
-      device_id : deviceId
+      client_id : clientID,
+      device_id : deviceID
     };
 
     db.update("permissions",obj,filter)

@@ -28,7 +28,7 @@ module.exports = {
     brokers: (process.env.KAFKA_BROKERS || 'localhost:29092').split(','),
     clientId: process.env.KAFKA_CLIENT_ID || 'mqtt-broker-auth',
     topics: (process.env.KAFKA_TOPICS || 'inlocMsgsSniffed,feedbackPos,freeRTOS2,lwm2m').split(','),
-    enabled: process.env.KAFKA_ENABLED === 'true' || true,
+    enabled: process.env.KAFKA_ENABLED === 'true',
     auth: {
       enabled: process.env.KAFKA_AUTH_ENABLED === 'true' || false,
       mechanism: 'scram-sha-256', // or 'scram-sha-256', 'scram-sha-512', etc.
