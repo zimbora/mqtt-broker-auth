@@ -159,16 +159,17 @@ var self = module.exports = {
           const escapedTable = mysql.escapeId(table);
           const escapedColumn = mysql.escapeId(column);
           query = `UPDATE ${escapedTable} SET ${escapedColumn} = `;
-          keys.forEach((key, index) => {
+          for (let index = 0; index < keys.length; index++) {
+            const key = keys[index];
             if (!/^[a-zA-Z0-9_]+$/.test(key)) {
-              throw new Error(`Invalid JSON key: ${key}`);
+              return reject(new Error(`Invalid JSON key: ${key}`));
             }
             query += `JSON_SET(${escapedColumn}, '$.${key}', ?)`;
             values.push(data[key]);
             if (index !== keys.length - 1) {
               query += ', ';
             }
-          });
+          }
         } else {
           return reject("data passed is not an object");
         }
