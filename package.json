@@ -4,7 +4,21 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "nyc --reporter=text --reporter=lcov mocha 'test/**/*.test.js' --timeout 5000",
+    "test:coverage": "nyc report --reporter=text-summary"
+  },
+  "nyc": {
+    "include": [
+      "src/**/*.js"
+    ],
+    "exclude": [
+      "test/**"
+    ],
+    "check-coverage": true,
+    "branches": 80,
+    "lines": 80,
+    "functions": 60,
+    "statements": 80
   },
   "keywords": [],
   "author": "",
@@ -22,5 +36,11 @@
     "mysql2": "^3.2.0",
     "net": "^1.0.2",
     "websocket-stream": "^5.3.0"
+  },
+  "devDependencies": {
+    "chai": "^6.2.2",
+    "mocha": "^11.8.0",
+    "nyc": "^18.0.0",
+    "sinon": "^22.1.0"
   }
 }
