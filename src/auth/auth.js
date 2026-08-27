@@ -387,7 +387,7 @@ async function getPermission(clientID,deviceID){
     .then( rows => {
       if(rows.length > 0)
         return resolve(rows[0]?.level);
-      else return null;
+      else return resolve(null);
     })
     .catch( error => {
       return reject(error);
